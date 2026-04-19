@@ -16,9 +16,26 @@ pub fn add(a: i32, b: i32) -> i32 {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Initialize PDFium at startup. If this fails, the app still runs but
+    // PDF operations will return errors.
+    if let Err(e) = pdf::engine::init() {
+        eprintln!("Warning: PDFium failed to initialize: {}", e);
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            commands::pdf::pdf_open,
+            commands::pdf::pdf_render_page,
+            commands::pdf::pdf_extract_text,
+            commands::pdf::pdf_get_bookmarks,
+            commands::pdf::pdf_get_pages_info,
+            commands::pdf::pdf_save_backup,
+            commands::search::pdf_search,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
