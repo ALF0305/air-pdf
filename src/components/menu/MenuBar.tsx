@@ -21,6 +21,8 @@ export function MenuBar({ onOpen, onSearch }: Props) {
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const toggleReadingMode = useUiStore((s) => s.toggleReadingMode);
   const setViewMode = usePdfStore((s) => s.setViewMode);
+  const setMergeDialogOpen = useUiStore((s) => s.setMergeDialogOpen);
+  const setSplitExtractDialog = useUiStore((s) => s.setSplitExtractDialog);
 
   return (
     <div className="flex items-center">
@@ -34,6 +36,22 @@ export function MenuBar({ onOpen, onSearch }: Props) {
           <DropdownMenuItem onClick={onOpen}>
             Abrir...
             <DropdownMenuShortcut>Ctrl+O</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setMergeDialogOpen(true)}>
+            Combinar PDFs...
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSplitExtractDialog("extract")}
+            disabled={!activeTabId}
+          >
+            Extraer páginas...
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSplitExtractDialog("split")}
+            disabled={!activeTabId}
+          >
+            Dividir PDF...
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

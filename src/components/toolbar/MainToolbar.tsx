@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { RotateCw, RotateCcw, Scissors, Trash2 } from "lucide-react";
 import { usePdfStore } from "@/stores/pdfStore";
+import { useUiStore } from "@/stores/uiStore";
 import {
   rotatePages,
   extractPages,
@@ -13,12 +14,13 @@ import { save } from "@tauri-apps/plugin-dialog";
 export function MainToolbar() {
   const activeTab = usePdfStore((s) => s.getActiveTab());
   const currentPage = usePdfStore((s) => s.currentPage);
+  const bumpRefresh = useUiStore((s) => s.bumpRefresh);
 
   const rotate = async (degrees: number) => {
     if (!activeTab) return;
     if (
       !confirm(
-        `Rotar página ${currentPage + 1} ${degrees > 0 ? "→" : "←"}? Se creará backup .bak y se guardará versión.`
+        `Rotar página ${currentPage + 1} ${degrees > 0 ? "→" : "←"}? Se crea backup .bak.`
       )
     )
       return;
@@ -27,9 +29,7 @@ export function MainToolbar() {
       await saveVersion(activeTab.path);
       await savePdfBackup(activeTab.path, activeTab.path + ".bak");
       await rotatePages(activeTab.path, activeTab.path, [currentPage], degrees);
-      alert("Página rotada. Backup guardado.");
-      // Force re-render by closing and reopening tab (simple approach)
-      window.location.reload();
+      bumpRefresh();
     } catch (e) {
       alert(`Error rotando: ${e}`);
     }
@@ -61,7 +61,7 @@ export function MainToolbar() {
     }
     if (
       !confirm(
-        `¿Eliminar página ${currentPage + 1}? Se creará backup .bak antes.`
+        `¿Eliminar página ${currentPage + 1}? Se crea backup .bak antes.`
       )
     )
       return;
@@ -70,8 +70,7 @@ export function MainToolbar() {
       await saveVersion(activeTab.path);
       await savePdfBackup(activeTab.path, activeTab.path + ".bak");
       await deletePages(activeTab.path, activeTab.path, [currentPage]);
-      alert("Página eliminada. Backup guardado.");
-      window.location.reload();
+      bumpRefresh();
     } catch (e) {
       alert(`Error eliminando: ${e}`);
     }

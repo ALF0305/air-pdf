@@ -64,3 +64,44 @@ pub async fn version_list(pdf_path: String) -> Result<Vec<String>, String> {
         .map(|p| p.to_string_lossy().to_string())
         .collect())
 }
+
+#[tauri::command]
+pub async fn pages_merge(
+    input_paths: Vec<String>,
+    output_path: String,
+) -> Result<(), String> {
+    let inputs: Vec<PathBuf> = input_paths.into_iter().map(PathBuf::from).collect();
+    editor::merge_pdfs(&inputs, &PathBuf::from(output_path)).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn pages_reorder(
+    input_path: String,
+    output_path: String,
+    new_order: Vec<u16>,
+) -> Result<(), String> {
+    editor::reorder_pages(
+        &PathBuf::from(input_path),
+        &PathBuf::from(output_path),
+        &new_order,
+    )
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn pages_split(
+    input_path: String,
+    output_dir: String,
+    splits: Vec<u16>,
+) -> Result<Vec<String>, String> {
+    let outputs = editor::split_pdf_at_pages(
+        &PathBuf::from(input_path),
+        &PathBuf::from(output_dir),
+        &splits,
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(outputs
+        .into_iter()
+        .map(|p| p.to_string_lossy().to_string())
+        .collect())
+}

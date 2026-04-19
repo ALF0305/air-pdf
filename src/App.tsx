@@ -6,6 +6,8 @@ import { ViewModeSelector } from "@/components/viewer/ViewModeSelector";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import { SearchDialog } from "@/components/dialogs/SearchDialog";
 import { RecentFilesMenu } from "@/components/dialogs/RecentFilesMenu";
+import { MergePdfsDialog } from "@/components/dialogs/MergePdfsDialog";
+import { SplitExtractDialog } from "@/components/dialogs/SplitExtractDialog";
 import { MenuBar } from "@/components/menu/MenuBar";
 import { StatusBar } from "@/components/statusbar/StatusBar";
 import { TabBar } from "@/components/tabs/TabBar";
@@ -189,7 +191,28 @@ function App() {
       </main>
       {!readingMode && <StatusBar />}
       <SearchDialog />
+      <MergeDialogMount />
+      <SplitDialogMount />
     </div>
+  );
+}
+
+function MergeDialogMount() {
+  const open = useUiStore((s) => s.mergeDialogOpen);
+  const setOpen = useUiStore((s) => s.setMergeDialogOpen);
+  return <MergePdfsDialog open={open} onClose={() => setOpen(false)} />;
+}
+
+function SplitDialogMount() {
+  const mode = useUiStore((s) => s.splitExtractDialog);
+  const setMode = useUiStore((s) => s.setSplitExtractDialog);
+  if (!mode) return null;
+  return (
+    <SplitExtractDialog
+      open={true}
+      onClose={() => setMode(null)}
+      mode={mode}
+    />
   );
 }
 

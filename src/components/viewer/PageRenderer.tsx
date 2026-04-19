@@ -3,6 +3,7 @@ import { renderPage } from "@/lib/tauri";
 import { AnnotationLayer } from "@/components/annotations/AnnotationLayer";
 import { StampPicker, type Stamp } from "@/components/annotations/StampPicker";
 import { useAnnotationStore } from "@/stores/annotationStore";
+import { useUiStore } from "@/stores/uiStore";
 
 interface Props {
   path: string;
@@ -36,6 +37,7 @@ export function PageRenderer({
   } | null>(null);
   const tool = useAnnotationStore((s) => s.activeTool);
   const add = useAnnotationStore((s) => s.add);
+  const refreshKey = useUiStore((s) => s.refreshKey);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Lazy-load: only render when near viewport
@@ -83,7 +85,7 @@ export function PageRenderer({
       cancelled = true;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [path, pageIndex, scale, shouldRender]);
+  }, [path, pageIndex, scale, shouldRender, refreshKey]);
 
   const handleStampAreaClick = (e: React.MouseEvent) => {
     if (tool !== "stamp") return;

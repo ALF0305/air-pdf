@@ -332,6 +332,29 @@ export async function deletePages(
   await invoke("pages_delete", { inputPath, outputPath, pages });
 }
 
+export async function mergePdfs(
+  inputPaths: string[],
+  outputPath: string
+): Promise<void> {
+  await invoke("pages_merge", { inputPaths, outputPath });
+}
+
+export async function reorderPages(
+  inputPath: string,
+  outputPath: string,
+  newOrder: number[]
+): Promise<void> {
+  await invoke("pages_reorder", { inputPath, outputPath, newOrder });
+}
+
+export async function splitPdf(
+  inputPath: string,
+  outputDir: string,
+  splits: number[]
+): Promise<string[]> {
+  return await invoke<string[]>("pages_split", { inputPath, outputDir, splits });
+}
+
 // ====== Version history ======
 
 export async function saveVersion(pdfPath: string): Promise<string> {

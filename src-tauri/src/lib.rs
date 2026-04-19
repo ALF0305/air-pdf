@@ -53,6 +53,9 @@ pub fn run() {
             commands::pages::pages_delete,
             commands::pages::version_save,
             commands::pages::version_list,
+            commands::pages::pages_merge,
+            commands::pages::pages_reorder,
+            commands::pages::pages_split,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

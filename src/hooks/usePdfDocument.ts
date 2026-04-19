@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { getPagesInfo } from "@/lib/tauri";
+import { useUiStore } from "@/stores/uiStore";
 import type { PdfPage } from "@/types/pdf";
 
 export function usePdfDocument(path: string | null) {
   const [pages, setPages] = useState<PdfPage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const refreshKey = useUiStore((s) => s.refreshKey);
 
   useEffect(() => {
     if (!path) {
@@ -28,7 +30,7 @@ export function usePdfDocument(path: string | null) {
     return () => {
       cancelled = true;
     };
-  }, [path]);
+  }, [path, refreshKey]);
 
   return { pages, loading, error };
 }

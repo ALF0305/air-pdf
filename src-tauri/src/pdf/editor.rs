@@ -1,8 +1,9 @@
-// Edit operations on PDF: embed annotations, rotate, extract, delete pages
+// Edit operations on PDF: embed annotations, rotate, extract, delete, merge, reorder pages
 use crate::error::{AppError, Result};
+use crate::pdf::engine::pdfium;
 use crate::storage::sidecar::{Annotation, Sidecar};
 use lopdf::{dictionary, Document, Object};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 // ====== EMBED ANNOTATIONS ======
 
@@ -141,6 +142,138 @@ pub fn delete_pages(input: &Path, output: &Path, pages_to_delete: &[u16]) -> Res
     doc.compress();
     doc.save(output).map_err(|e| AppError::Io(e.to_string()))?;
     Ok(())
+}
+
+// ====== MERGE PDFS (pdfium) ======
+
+/// Merge multiple PDFs into a single output file, preserving order.
+pub fn merge_pdfs(inputs: &[PathBuf], output: &Path) -> Result<()> {
+    if inputs.is_empty() {
+        return Err(AppError::InvalidInput("No input PDFs".into()));
+    }
+
+    let pdfium = pdfium()?;
+    let mut merged = pdfium
+        .create_new_pdf()
+        .map_err(|e| AppError::Pdf(format!("Create new PDF failed: {}", e)))?;
+
+    for input in inputs {
+        let source = pdfium
+            .load_pdf_from_file(input, None)
+            .map_err(|e| AppError::Pdf(format!("Cannot load {}: {}", input.display(), e)))?;
+
+        let source_page_count = source.pages().len() as i32;
+        let dest_page_count = merged.pages().len() as i32;
+
+        if source_page_count == 0 {
+            continue;
+        }
+
+        // Append all pages from source into merged
+        merged
+            .pages_mut()
+            .copy_page_range_from_document(
+                &source,
+                0..=(source_page_count - 1),
+                dest_page_count,
+            )
+            .map_err(|e| AppError::Pdf(format!("Copy pages failed: {}", e)))?;
+    }
+
+    merged
+        .save_to_file(output)
+        .map_err(|e| AppError::Io(format!("Save failed: {}", e)))?;
+    Ok(())
+}
+
+// ====== REORDER PAGES (pdfium) ======
+
+/// Reorder pages according to new_order (0-indexed). All pages must be listed exactly once.
+pub fn reorder_pages(
+    input: &Path,
+    output: &Path,
+    new_order: &[u16],
+) -> Result<()> {
+    let pdfium = pdfium()?;
+    let source = pdfium
+        .load_pdf_from_file(input, None)
+        .map_err(|e| AppError::Pdf(format!("Cannot load PDF: {}", e)))?;
+
+    let total = source.pages().len() as i32;
+    if new_order.len() != total as usize {
+        return Err(AppError::InvalidInput(format!(
+            "new_order has {} entries but PDF has {} pages",
+            new_order.len(),
+            total
+        )));
+    }
+
+    let mut merged = pdfium
+        .create_new_pdf()
+        .map_err(|e| AppError::Pdf(format!("Create new PDF failed: {}", e)))?;
+
+    for (dest_idx, &src_idx) in new_order.iter().enumerate() {
+        let src_i32 = src_idx as i32;
+        if src_i32 >= total {
+            return Err(AppError::InvalidInput(format!(
+                "Page index {} out of range",
+                src_idx
+            )));
+        }
+        merged
+            .pages_mut()
+            .copy_page_range_from_document(&source, src_i32..=src_i32, dest_idx as i32)
+            .map_err(|e| AppError::Pdf(format!("Copy page {} failed: {}", src_idx, e)))?;
+    }
+
+    merged
+        .save_to_file(output)
+        .map_err(|e| AppError::Io(format!("Save failed: {}", e)))?;
+    Ok(())
+}
+
+// ====== SPLIT PDF ======
+
+/// Split a PDF into N pieces by cut points (0-indexed page numbers where splits happen).
+/// Returns the list of output files.
+pub fn split_pdf_at_pages(
+    input: &Path,
+    output_dir: &Path,
+    splits: &[u16],
+) -> Result<Vec<PathBuf>> {
+    let pdfium = pdfium()?;
+    let source = pdfium
+        .load_pdf_from_file(input, None)
+        .map_err(|e| AppError::Pdf(e.to_string()))?;
+    let total = source.pages().len() as u16;
+
+    // Build ranges based on split points
+    let mut ranges: Vec<Vec<u16>> = Vec::new();
+    let mut cursor = 0u16;
+    for &split in splits {
+        if split > cursor && split <= total {
+            ranges.push((cursor..split).collect());
+            cursor = split;
+        }
+    }
+    if cursor < total {
+        ranges.push((cursor..total).collect());
+    }
+
+    let stem = input
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "split".into());
+
+    std::fs::create_dir_all(output_dir)?;
+
+    let mut outputs = Vec::new();
+    for (i, range) in ranges.iter().enumerate() {
+        let out = output_dir.join(format!("{}-parte{}.pdf", stem, i + 1));
+        extract_pages(input, &out, range)?;
+        outputs.push(out);
+    }
+    Ok(outputs)
 }
 
 // ====== TESTS ======
