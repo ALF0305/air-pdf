@@ -1,3 +1,9 @@
+pub mod error;
+pub mod commands;
+pub mod pdf;
+pub mod storage;
+pub mod integrations;
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {
