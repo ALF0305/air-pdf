@@ -9,9 +9,11 @@ import { RecentFilesMenu } from "@/components/dialogs/RecentFilesMenu";
 import { MenuBar } from "@/components/menu/MenuBar";
 import { StatusBar } from "@/components/statusbar/StatusBar";
 import { TabBar } from "@/components/tabs/TabBar";
+import { AnnotationToolbar } from "@/components/toolbar/AnnotationToolbar";
 import { usePdfStore } from "@/stores/pdfStore";
 import { useUiStore } from "@/stores/uiStore";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useAnnotationStore } from "@/stores/annotationStore";
 import { openPdf, addRecentFile } from "@/lib/tauri";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useShortcuts } from "@/hooks/useShortcuts";
@@ -22,6 +24,7 @@ import { useEffect } from "react";
 function App() {
   const addTab = usePdfStore((s) => s.addTab);
   const closeTab = usePdfStore((s) => s.closeTab);
+  const activeTabId = usePdfStore((s) => s.activeTabId);
   const currentPage = usePdfStore((s) => s.currentPage);
   const setCurrentPage = usePdfStore((s) => s.setCurrentPage);
   const readingMode = useUiStore((s) => s.readingMode);
@@ -30,11 +33,23 @@ function App() {
   const toggleReadingMode = useUiStore((s) => s.toggleReadingMode);
   const setSearchDialogOpen = useUiStore((s) => s.setSearchDialogOpen);
   const loadSettings = useSettingsStore((s) => s.load);
+  const loadAnnotations = useAnnotationStore((s) => s.load);
+  const setTool = useAnnotationStore((s) => s.setTool);
+  const selectedAnnId = useAnnotationStore((s) => s.selectedId);
+  const removeAnnotation = useAnnotationStore((s) => s.remove);
 
   // Load settings on mount
   useEffect(() => {
     loadSettings();
   }, [loadSettings]);
+
+  // Load annotations when active tab changes
+  useEffect(() => {
+    const tab = usePdfStore.getState().getActiveTab();
+    if (tab) {
+      loadAnnotations(tab.path);
+    }
+  }, [activeTabId, loadAnnotations]);
 
   const handleOpen = async () => {
     const selected = await open({
@@ -89,6 +104,18 @@ function App() {
         if (tab) setCurrentPage(tab.pageCount - 1);
       },
     },
+    // Annotation tool shortcuts
+    { key: "h", handler: () => setTool("highlight") },
+    { key: "u", handler: () => setTool("underline") },
+    { key: "n", handler: () => setTool("note") },
+    { key: "p", handler: () => setTool("pen") },
+    { key: "s", handler: () => setTool("select") },
+    {
+      key: "Delete",
+      handler: () => {
+        if (selectedAnnId) removeAnnotation(selectedAnnId);
+      },
+    },
   ]);
 
   useDragDrop(async (paths) => {
@@ -125,7 +152,9 @@ function App() {
             size="icon"
             variant="ghost"
             onClick={toggleSidebar}
-            title={sidebarVisible ? "Ocultar panel lateral" : "Mostrar panel lateral"}
+            title={
+              sidebarVisible ? "Ocultar panel lateral" : "Mostrar panel lateral"
+            }
           >
             {sidebarVisible ? (
               <PanelLeftClose className="h-4 w-4" />
@@ -150,6 +179,7 @@ function App() {
         </header>
       )}
       {!readingMode && <TabBar />}
+      {!readingMode && activeTabId && <AnnotationToolbar />}
       <main className="flex-1 flex overflow-hidden">
         {!readingMode && sidebarVisible && <Sidebar />}
         <PdfViewer />

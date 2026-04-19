@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { renderPage } from "@/lib/tauri";
+import { AnnotationLayer } from "@/components/annotations/AnnotationLayer";
+import { StampPicker, type Stamp } from "@/components/annotations/StampPicker";
+import { useAnnotationStore } from "@/stores/annotationStore";
 
 interface Props {
   path: string;
@@ -12,6 +15,13 @@ interface Props {
 export function PageRenderer({ path, pageIndex, scale, width, height }: Props) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [stampPickerOpen, setStampPickerOpen] = useState(false);
+  const [pendingStampPos, setPendingStampPos] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const tool = useAnnotationStore((s) => s.activeTool);
+  const add = useAnnotationStore((s) => s.add);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,10 +45,42 @@ export function PageRenderer({ path, pageIndex, scale, width, height }: Props) {
     };
   }, [path, pageIndex, scale]);
 
+  const handleStampAreaClick = (e: React.MouseEvent) => {
+    if (tool !== "stamp") return;
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPendingStampPos({
+      x: (e.clientX - rect.left) / scale,
+      y: (e.clientY - rect.top) / scale,
+    });
+    setStampPickerOpen(true);
+  };
+
+  const handleStampPick = async (stamp: Stamp) => {
+    if (!pendingStampPos) return;
+    await add({
+      type: "stamp",
+      page: pageIndex,
+      rect: [
+        pendingStampPos.x,
+        pendingStampPos.y,
+        pendingStampPos.x + 150,
+        pendingStampPos.y + 40,
+      ],
+      color: stamp.bg,
+      category: "Sello",
+      author: "Alfredo",
+      text: stamp.label,
+      data: { stampId: stamp.id, fgColor: stamp.color },
+    });
+    setPendingStampPos(null);
+  };
+
   return (
     <div
       className="relative bg-white shadow-md mx-auto my-4"
       style={{ width: width * scale, height: height * scale }}
+      onClick={tool === "stamp" ? handleStampAreaClick : undefined}
     >
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
@@ -50,8 +92,20 @@ export function PageRenderer({ path, pageIndex, scale, width, height }: Props) {
           src={imageUrl}
           alt={`Pagina ${pageIndex + 1}`}
           className="w-full h-full object-contain"
+          draggable={false}
         />
       )}
+      <AnnotationLayer
+        pageIndex={pageIndex}
+        width={width}
+        height={height}
+        scale={scale}
+      />
+      <StampPicker
+        open={stampPickerOpen}
+        onClose={() => setStampPickerOpen(false)}
+        onPick={handleStampPick}
+      />
     </div>
   );
 }

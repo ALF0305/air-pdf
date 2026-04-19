@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ThumbnailsPanel } from "./ThumbnailsPanel";
 import { BookmarksPanel } from "./BookmarksPanel";
+import { AnnotationsPanel } from "./AnnotationsPanel";
 import { Button } from "@/components/ui/button";
 import { Image as ImageIcon, BookMarked, Pencil } from "lucide-react";
 
@@ -43,11 +44,7 @@ export function Sidebar() {
       <div className="flex-1 min-w-0">
         {active === "thumbnails" && <ThumbnailsPanel />}
         {active === "bookmarks" && <BookmarksPanel />}
-        {active === "annotations" && (
-          <div className="p-2 text-sm text-muted-foreground w-64 border-r">
-            Anotaciones (Plan 1.2 - proximamente)
-          </div>
-        )}
+        {active === "annotations" && <AnnotationsPanel />}
       </div>
     </div>
   );

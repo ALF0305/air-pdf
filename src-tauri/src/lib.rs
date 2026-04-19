@@ -41,6 +41,13 @@ pub fn run() {
             commands::settings::recent_add,
             commands::settings::recent_clear,
             commands::settings::detect_ai_mode,
+            commands::annotations::annotations_load,
+            commands::annotations::annotations_save,
+            commands::annotations::annotation_add,
+            commands::annotations::annotation_update,
+            commands::annotations::annotation_delete,
+            commands::annotations::annotations_clear,
+            commands::annotations::annotations_embed_into_pdf,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

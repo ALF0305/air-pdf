@@ -181,3 +181,133 @@ export type AiMode =
 export async function detectAiMode(): Promise<AiMode> {
   return await invoke<AiMode>("detect_ai_mode");
 }
+
+// ====== Annotations ======
+
+import type { Annotation, AnnotationsSidecar } from "@/types/annotations";
+
+interface BackendAnnotation {
+  id: string;
+  type: string;
+  page: number;
+  rect: [number, number, number, number];
+  color: string;
+  category?: string | null;
+  text?: string | null;
+  note?: string | null;
+  author: string;
+  createdAt: string;
+  updatedAt: string;
+  data?: unknown;
+}
+
+interface BackendSidecar {
+  version: string;
+  pdfHash: string;
+  createdAt: string;
+  updatedAt: string;
+  annotations: BackendAnnotation[];
+  bookmarksCustom: unknown[];
+  metadata: { tags: string[]; linkedObsidianNote?: string | null };
+}
+
+function mapAnnotation(a: BackendAnnotation): Annotation {
+  return {
+    id: a.id,
+    type: a.type as Annotation["type"],
+    page: a.page,
+    rect: a.rect,
+    color: a.color,
+    category: a.category ?? undefined,
+    text: a.text ?? undefined,
+    note: a.note ?? undefined,
+    author: a.author,
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
+    data: a.data,
+  };
+}
+
+function mapSidecar(s: BackendSidecar): AnnotationsSidecar {
+  return {
+    version: s.version,
+    pdfHash: s.pdfHash,
+    createdAt: s.createdAt,
+    updatedAt: s.updatedAt,
+    annotations: s.annotations.map(mapAnnotation),
+    bookmarksCustom: s.bookmarksCustom,
+    metadata: {
+      tags: s.metadata.tags,
+      linkedObsidianNote: s.metadata.linkedObsidianNote ?? undefined,
+    },
+  };
+}
+
+function annotationToBackend(a: Annotation): BackendAnnotation {
+  return {
+    id: a.id,
+    type: a.type,
+    page: a.page,
+    rect: a.rect,
+    color: a.color,
+    category: a.category ?? null,
+    text: a.text ?? null,
+    note: a.note ?? null,
+    author: a.author,
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
+    data: a.data,
+  };
+}
+
+export async function loadAnnotations(pdfPath: string): Promise<AnnotationsSidecar> {
+  const response = await invoke<BackendSidecar>("annotations_load", { pdfPath });
+  return mapSidecar(response);
+}
+
+export async function addAnnotation(
+  pdfPath: string,
+  annotation: Annotation
+): Promise<AnnotationsSidecar> {
+  const response = await invoke<BackendSidecar>("annotation_add", {
+    pdfPath,
+    annotation: annotationToBackend(annotation),
+  });
+  return mapSidecar(response);
+}
+
+export async function updateAnnotation(
+  pdfPath: string,
+  annotation: Annotation
+): Promise<AnnotationsSidecar> {
+  const response = await invoke<BackendSidecar>("annotation_update", {
+    pdfPath,
+    annotation: annotationToBackend(annotation),
+  });
+  return mapSidecar(response);
+}
+
+export async function deleteAnnotation(
+  pdfPath: string,
+  annotationId: string
+): Promise<AnnotationsSidecar> {
+  const response = await invoke<BackendSidecar>("annotation_delete", {
+    pdfPath,
+    annotationId,
+  });
+  return mapSidecar(response);
+}
+
+export async function clearAnnotations(
+  pdfPath: string
+): Promise<AnnotationsSidecar> {
+  const response = await invoke<BackendSidecar>("annotations_clear", { pdfPath });
+  return mapSidecar(response);
+}
+
+export async function embedAnnotationsIntoPdf(
+  pdfPath: string,
+  outputPath: string
+): Promise<void> {
+  await invoke("annotations_embed_into_pdf", { pdfPath, outputPath });
+}
