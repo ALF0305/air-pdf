@@ -48,7 +48,7 @@
     ],
     "windows": {
       "wix": {
-        "language": ["es-PE", "en-US"]
+        "language": ["es-ES", "en-US"]
       }
     }
   }
