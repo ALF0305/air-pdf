@@ -3,20 +3,25 @@ import { PdfViewer } from "@/components/viewer/PdfViewer";
 import { ZoomControls } from "@/components/viewer/ZoomControls";
 import { PageNavigation } from "@/components/viewer/PageNavigation";
 import { ViewModeSelector } from "@/components/viewer/ViewModeSelector";
+import { Sidebar } from "@/components/sidebar/Sidebar";
+import { SearchDialog } from "@/components/dialogs/SearchDialog";
 import { usePdfStore } from "@/stores/pdfStore";
 import { useUiStore } from "@/stores/uiStore";
 import { openPdf } from "@/lib/tauri";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { useDragDrop } from "@/hooks/useDragDrop";
-import { FolderOpen } from "lucide-react";
+import { FolderOpen, Search, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 function App() {
   const addTab = usePdfStore((s) => s.addTab);
   const currentPage = usePdfStore((s) => s.currentPage);
   const setCurrentPage = usePdfStore((s) => s.setCurrentPage);
   const readingMode = useUiStore((s) => s.readingMode);
+  const sidebarVisible = useUiStore((s) => s.sidebarVisible);
+  const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const toggleReadingMode = useUiStore((s) => s.toggleReadingMode);
+  const setSearchDialogOpen = useUiStore((s) => s.setSearchDialogOpen);
 
   const handleOpen = async () => {
     const selected = await open({
@@ -46,6 +51,7 @@ function App() {
 
   useShortcuts([
     { key: "o", ctrl: true, handler: handleOpen },
+    { key: "f", ctrl: true, handler: () => setSearchDialogOpen(true) },
     { key: "F11", handler: toggleReadingMode },
     { key: "Escape", handler: () => readingMode && toggleReadingMode() },
     { key: "PageDown", handler: goToNextPage },
@@ -89,6 +95,26 @@ function App() {
             <FolderOpen className="h-4 w-4" />
             Abrir
           </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={toggleSidebar}
+            title={sidebarVisible ? "Ocultar panel lateral" : "Mostrar panel lateral"}
+          >
+            {sidebarVisible ? (
+              <PanelLeftClose className="h-4 w-4" />
+            ) : (
+              <PanelLeftOpen className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setSearchDialogOpen(true)}
+            title="Buscar (Ctrl+F)"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
           <div className="flex-1" />
           <PageNavigation />
           <div className="w-px h-6 bg-border mx-1" />
@@ -98,8 +124,10 @@ function App() {
         </header>
       )}
       <main className="flex-1 flex overflow-hidden">
+        {!readingMode && sidebarVisible && <Sidebar />}
         <PdfViewer />
       </main>
+      <SearchDialog />
     </div>
   );
 }
