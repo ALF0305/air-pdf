@@ -1,0 +1,119 @@
+import { Button } from "@/components/ui/button";
+import { RotateCw, RotateCcw, Scissors, Trash2 } from "lucide-react";
+import { usePdfStore } from "@/stores/pdfStore";
+import {
+  rotatePages,
+  extractPages,
+  deletePages,
+  savePdfBackup,
+  saveVersion,
+} from "@/lib/tauri";
+import { save } from "@tauri-apps/plugin-dialog";
+
+export function MainToolbar() {
+  const activeTab = usePdfStore((s) => s.getActiveTab());
+  const currentPage = usePdfStore((s) => s.currentPage);
+
+  const rotate = async (degrees: number) => {
+    if (!activeTab) return;
+    if (
+      !confirm(
+        `Rotar página ${currentPage + 1} ${degrees > 0 ? "→" : "←"}? Se creará backup .bak y se guardará versión.`
+      )
+    )
+      return;
+
+    try {
+      await saveVersion(activeTab.path);
+      await savePdfBackup(activeTab.path, activeTab.path + ".bak");
+      await rotatePages(activeTab.path, activeTab.path, [currentPage], degrees);
+      alert("Página rotada. Backup guardado.");
+      // Force re-render by closing and reopening tab (simple approach)
+      window.location.reload();
+    } catch (e) {
+      alert(`Error rotando: ${e}`);
+    }
+  };
+
+  const extractCurrent = async () => {
+    if (!activeTab) return;
+    const target = await save({
+      defaultPath: activeTab.path.replace(
+        /\.pdf$/i,
+        `-pagina-${currentPage + 1}.pdf`
+      ),
+      filters: [{ name: "PDF", extensions: ["pdf"] }],
+    });
+    if (!target) return;
+    try {
+      await extractPages(activeTab.path, target, [currentPage]);
+      alert(`Extraída a: ${target}`);
+    } catch (e) {
+      alert(`Error extrayendo: ${e}`);
+    }
+  };
+
+  const deleteCurrent = async () => {
+    if (!activeTab) return;
+    if (activeTab.pageCount <= 1) {
+      alert("No se puede eliminar la única página");
+      return;
+    }
+    if (
+      !confirm(
+        `¿Eliminar página ${currentPage + 1}? Se creará backup .bak antes.`
+      )
+    )
+      return;
+
+    try {
+      await saveVersion(activeTab.path);
+      await savePdfBackup(activeTab.path, activeTab.path + ".bak");
+      await deletePages(activeTab.path, activeTab.path, [currentPage]);
+      alert("Página eliminada. Backup guardado.");
+      window.location.reload();
+    } catch (e) {
+      alert(`Error eliminando: ${e}`);
+    }
+  };
+
+  if (!activeTab) return null;
+
+  return (
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => rotate(-90)}
+        title="Rotar izquierda 90°"
+      >
+        <RotateCcw className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => rotate(90)}
+        title="Rotar derecha 90°"
+      >
+        <RotateCw className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={extractCurrent}
+        title="Extraer página actual a PDF nuevo"
+      >
+        <Scissors className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={deleteCurrent}
+        title="Eliminar página actual"
+        className="text-destructive"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}

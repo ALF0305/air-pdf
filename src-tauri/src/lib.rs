@@ -48,6 +48,11 @@ pub fn run() {
             commands::annotations::annotation_delete,
             commands::annotations::annotations_clear,
             commands::annotations::annotations_embed_into_pdf,
+            commands::pages::pages_rotate,
+            commands::pages::pages_extract,
+            commands::pages::pages_delete,
+            commands::pages::version_save,
+            commands::pages::version_list,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

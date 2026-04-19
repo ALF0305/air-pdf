@@ -305,6 +305,50 @@ export async function clearAnnotations(
   return mapSidecar(response);
 }
 
+// ====== Page editing ======
+
+export async function rotatePages(
+  inputPath: string,
+  outputPath: string,
+  pages: number[],
+  degrees: number
+): Promise<void> {
+  await invoke("pages_rotate", { inputPath, outputPath, pages, degrees });
+}
+
+export async function extractPages(
+  inputPath: string,
+  outputPath: string,
+  pages: number[]
+): Promise<void> {
+  await invoke("pages_extract", { inputPath, outputPath, pages });
+}
+
+export async function deletePages(
+  inputPath: string,
+  outputPath: string,
+  pages: number[]
+): Promise<void> {
+  await invoke("pages_delete", { inputPath, outputPath, pages });
+}
+
+// ====== Version history ======
+
+export async function saveVersion(pdfPath: string): Promise<string> {
+  return await invoke<string>("version_save", { pdfPath });
+}
+
+export async function listVersions(pdfPath: string): Promise<string[]> {
+  return await invoke<string[]>("version_list", { pdfPath });
+}
+
+export async function savePdfBackup(
+  path: string,
+  backupPath: string
+): Promise<void> {
+  await invoke("pdf_save_backup", { path, backupPath });
+}
+
 export async function embedAnnotationsIntoPdf(
   pdfPath: string,
   outputPath: string

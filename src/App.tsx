@@ -10,6 +10,7 @@ import { MenuBar } from "@/components/menu/MenuBar";
 import { StatusBar } from "@/components/statusbar/StatusBar";
 import { TabBar } from "@/components/tabs/TabBar";
 import { AnnotationToolbar } from "@/components/toolbar/AnnotationToolbar";
+import { MainToolbar } from "@/components/toolbar/MainToolbar";
 import { usePdfStore } from "@/stores/pdfStore";
 import { useUiStore } from "@/stores/uiStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -170,6 +171,8 @@ function App() {
           >
             <Search className="h-4 w-4" />
           </Button>
+          <div className="w-px h-6 bg-border mx-1" />
+          <MainToolbar />
           <div className="flex-1" />
           <PageNavigation />
           <div className="w-px h-6 bg-border mx-1" />
