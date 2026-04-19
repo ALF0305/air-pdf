@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { renderPage } from "@/lib/tauri";
 import { AnnotationLayer } from "@/components/annotations/AnnotationLayer";
 import { StampPicker, type Stamp } from "@/components/annotations/StampPicker";
@@ -10,11 +10,25 @@ interface Props {
   scale: number;
   width: number;
   height: number;
+  /** If true, defers render until element is near viewport (IntersectionObserver). */
+  lazy?: boolean;
 }
 
-export function PageRenderer({ path, pageIndex, scale, width, height }: Props) {
+/** Oversample factor for crisp text on HiDPI screens.
+ *  Render at scale * OVERSAMPLE, display at scale. Browser downsamples = crisp. */
+const OVERSAMPLE = 2;
+
+export function PageRenderer({
+  path,
+  pageIndex,
+  scale,
+  width,
+  height,
+  lazy = false,
+}: Props) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [shouldRender, setShouldRender] = useState(!lazy);
   const [stampPickerOpen, setStampPickerOpen] = useState(false);
   const [pendingStampPos, setPendingStampPos] = useState<{
     x: number;
@@ -22,12 +36,38 @@ export function PageRenderer({ path, pageIndex, scale, width, height }: Props) {
   } | null>(null);
   const tool = useAnnotationStore((s) => s.activeTool);
   const add = useAnnotationStore((s) => s.add);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Lazy-load: only render when near viewport
+  useEffect(() => {
+    if (!lazy || shouldRender || !containerRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldRender(true);
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: "800px",
+        threshold: 0.01,
+      }
+    );
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [lazy, shouldRender]);
 
   useEffect(() => {
+    if (!shouldRender) return;
     let cancelled = false;
     let url: string | null = null;
     setLoading(true);
-    renderPage(path, pageIndex, scale)
+    // Oversample for crisp text on HiDPI
+    const renderScale = scale * OVERSAMPLE;
+    renderPage(path, pageIndex, renderScale)
       .then((blob) => {
         if (cancelled) return;
         url = URL.createObjectURL(blob);
@@ -43,7 +83,7 @@ export function PageRenderer({ path, pageIndex, scale, width, height }: Props) {
       cancelled = true;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [path, pageIndex, scale]);
+  }, [path, pageIndex, scale, shouldRender]);
 
   const handleStampAreaClick = (e: React.MouseEvent) => {
     if (tool !== "stamp") return;
@@ -78,13 +118,16 @@ export function PageRenderer({ path, pageIndex, scale, width, height }: Props) {
 
   return (
     <div
+      ref={containerRef}
       className="relative bg-white shadow-md mx-auto my-4"
       style={{ width: width * scale, height: height * scale }}
       onClick={tool === "stamp" ? handleStampAreaClick : undefined}
     >
-      {loading && (
+      {(loading || !shouldRender) && (
         <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
-          Cargando pagina {pageIndex + 1}...
+          {!shouldRender
+            ? `Página ${pageIndex + 1}`
+            : `Cargando página ${pageIndex + 1}...`}
         </div>
       )}
       {imageUrl && (

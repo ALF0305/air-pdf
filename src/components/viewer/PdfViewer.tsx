@@ -52,7 +52,7 @@ export function PdfViewer() {
         className="flex-1 overflow-auto bg-muted/20"
         onWheel={handleWheel}
       >
-        {pages.map((p) => (
+        {pages.map((p, idx) => (
           <PageRenderer
             key={p.pageNumber}
             path={activeTab.path}
@@ -60,6 +60,8 @@ export function PdfViewer() {
             scale={scale}
             width={p.width}
             height={p.height}
+            // First 3 pages render immediately; rest lazy-load via IntersectionObserver
+            lazy={idx > 2}
           />
         ))}
       </div>

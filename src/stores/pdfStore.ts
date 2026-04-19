@@ -24,8 +24,8 @@ export const usePdfStore = create<PdfStore>((set, get) => ({
   openTabs: [],
   activeTabId: null,
   currentPage: 0,
-  zoom: 1.0,
-  viewMode: "single",
+  zoom: 1.3,
+  viewMode: "continuous",
 
   addTab: (doc) => {
     const existing = get().openTabs.find((t) => t.path === doc.path);

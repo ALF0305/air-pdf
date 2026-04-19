@@ -21,7 +21,7 @@ function Thumbnail({
   useEffect(() => {
     let cancelled = false;
     let createdUrl: string | null = null;
-    renderPage(path, pageIndex, 0.2)
+    renderPage(path, pageIndex, 0.35)
       .then((blob) => {
         if (cancelled) return;
         createdUrl = URL.createObjectURL(blob);
