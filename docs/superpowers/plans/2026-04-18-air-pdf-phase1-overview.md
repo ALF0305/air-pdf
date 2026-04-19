@@ -1,120 +1,110 @@
-# AirPDF Fase 1 - Overview
+# AirPDF Fase 1 - Overview (FINAL sesión 2026-04-19)
 
-Fase 1 dividida en 3 sub-planes ejecutables independientemente.
+**Status: Fase 1 completa al 76% (47/62 tareas). Visor + anotaciones + edición páginas listos. Pendiente: auto-save, MSI release.**
 
-**Spec:** [`../specs/2026-04-18-air-pdf-design.md`](../specs/2026-04-18-air-pdf-design.md)
+## Sub-planes ejecutados
 
-## Sub-planes
-
-| Sub-plan | Archivo | Tareas | Duración | Resultado |
-|---|---|---|---|---|
-| 1.1 Fundación | `2026-04-18-air-pdf-plan-1.1-foundation.md` | ~30 | 1 sem | Visor PDF funcional |
-| 1.2 Anotaciones | `2026-04-18-air-pdf-plan-1.2-annotations.md` | ~15 | 1 sem | Anotaciones completas |
-| 1.3 Edición + Release | `2026-04-18-air-pdf-plan-1.3-editing-release.md` | ~17 | 1 sem | MSI v0.1.0 |
-
-## Stack
-
-Tauri 2 + React 19 + TypeScript + Vite + Tailwind 3 + shadcn/ui + Zustand 5 + PDF.js 4 + pdfium-render 0.9 + Vitest 4 + Cargo test + Playwright 1.59 + GitHub Actions.
-
-## Estado actual (snapshot 2026-04-19 ~10:20)
-
-### Plan 1.1 - progreso: 21 de 30 tareas (70%)
-
-| # | Task | Status | Commit |
+| Sub-plan | Tareas | Status | Tag |
 |---|---|---|---|
-| 1 | Scaffold Tauri + React + TS | Done | `e92d969` |
-| 2 | Tailwind + shadcn/ui | Done | `25405bc` |
-| 3 | Testing infrastructure | Done | `cd196d8` |
-| 4 | Module scaffolding (Rust + TS types) | Done | `b41c565` |
-| 5 | GitHub Actions CI + Release | Done | `03c2d14` |
-| 6 | PDFium integration (DLL bundle) | Done | `d6c37e5` |
-| 7-13 | PDF engine core (document, render, extract, search, pages) | Done | `ac5e4a1` |
-| 14 | PDF.js setup + typed Tauri wrapper | Done | `1dd834d` |
-| 15 | Zustand stores (pdfStore + uiStore) | Done | `1dd834d` |
-| 16 | PdfViewer + PageRenderer | Done | `5fcab7c` |
-| 17 | ZoomControls | Done | `5fcab7c` |
-| 18 | PageNavigation | Done | `5fcab7c` |
-| 19 | Sidebar + ThumbnailsPanel | Done | `bca5136` |
-| 20 | BookmarksPanel | Done | `bca5136` |
-| 21 | SearchDialog (Ctrl+F) | Done | `bca5136` |
-| 22 | Reading mode (F11) | Done | `5fcab7c` |
-| 23 | ViewModeSelector (single/double/continuous) | Done | `5fcab7c` |
-| 24 | Multi-tab UI | Pending | - |
-| 25 | Recent files | Pending | - |
-| 26 | Drag & drop | Done | `5fcab7c` |
-| 27 | Centralized shortcuts | Done | `5fcab7c` |
-| 28 | Settings persistentes (TOML) | Pending | - |
-| 29 | MenuBar (File/Edit/View) | Pending | - |
-| 30 | StatusBar + detect AI mode | Pending | - |
+| 1.1 Fundación | 30 | ✅ COMPLETO | `v0.1.0-alpha-foundation` |
+| 1.2 Anotaciones | 15 | ✅ COMPLETO | `v0.2.0-alpha-annotations` |
+| 1.3 Edición + Release | 17 | 🟡 8/17 done | pending |
 
-### Tests
-- Frontend (Vitest): **7/7 passing**
-- Rust (Cargo): **17/17 passing**
-- E2E (Playwright): 0/1 skipped hasta instalar Chromium
+## Capacidades implementadas
 
-### Capacidades actuales del visor (al correr `pnpm tauri dev`)
+### Lectura y navegación
+- Visor PDF rápido (PDFium 7MB bundled)
+- Multi-tab con middle-click para cerrar
+- Thumbnails sidebar click-jump
+- Bookmarks tree nested con expand/collapse
+- Búsqueda Ctrl+F con contexto + case-sensitive
+- Modo lectura F11
+- Multi-vista: 1/2/continuo
+- Zoom Ctrl+wheel 0.25x-5x
+- Drag & drop
+- Recent files (últimos 20)
+- Atajos de teclado completos
 
-- Abrir PDF via dialog (Ctrl+O) o drag-drop
-- Render de páginas con PDFium → PNG
-- Navegación: prev/next/first/last/input directo, PgUp/Dn, arrows, Ctrl+Home/End
-- Zoom: botones +/-/fit, Ctrl+wheel (0.25x-5x), reset al click
-- Vistas: 1 página / 2 páginas / continuo
-- Thumbnails sidebar (scroll + click jump, página activa con ring)
-- Bookmarks sidebar (tree nested, expand/collapse, click navega)
-- Búsqueda Ctrl+F (case-sensitive opcional, resultados con contexto 40 chars)
-- Modo lectura F11 (oculta header + sidebar), Esc sale
-- Toggle sidebar con botón en header
-- Backend PDF: load metadata, render page, extract text, bookmarks, search, page info, save backup
-- PDFium DLL bundled (7MB), detección automática al startup
+### Anotaciones
+- 10 herramientas (highlight, underline, strikethrough, note, pen, stamp, rect, circle, arrow, select)
+- 8 colores + 6 categorías + 5 sellos predefinidos
+- Sidecar `.airpdf.json` no destructivo
+- Export a Markdown para vault Obsidian con frontmatter
+- Embed en PDF interoperable con Acrobat/Xodo (lopdf)
+- Panel lateral con filtro + edición inline + clear all
+- SHA256 hash del PDF para detectar cambios
 
-### Lo que falta para cerrar Plan 1.1
+### Edición de páginas
+- Rotar página (izquierda/derecha 90°)
+- Extraer página actual a PDF nuevo
+- Eliminar página
+- Backup `.bak` automático antes de cada modificación
+- Version history (últimas 10 snapshots en %APPDATA%)
 
-- Task 24: multi-tab (tab bar arriba, actualmente solo muestra último tab abierto)
-- Task 25: recent files dropdown en header
-- Task 28: settings.toml persistencia en `%APPDATA%/AirPDF/settings.toml`
-- Task 29: MenuBar (File/Edit/View) como fallback a botones
-- Task 30: StatusBar con detección Claude Code / API key / Ollama
+### Configuración
+- Settings TOML en `%APPDATA%/AirPDF/settings.toml`
+- Detección AI: Claude Code / `ANTHROPIC_API_KEY` / Ollama
+- StatusBar con badge del modo
 
-Ninguna bloquea el uso básico. Se puede abrir, leer, navegar. Anotaciones vienen en Plan 1.2.
+### Privacidad
+- Sin telemetría
+- Local-first (sidecar no modifica PDF original)
+- Cumple Ley 29733 por diseño
+- Open source MIT
 
-## Commits realizados (cronológico)
+## Tests
+
+- **Frontend (Vitest):** 7/7 passing
+- **Rust (Cargo):** 32/32 passing
+  - engine (3), document (2), editor (2), extractor (6), renderer (3)
+  - storage: recent (3), settings (3), sidecar (4), version_history (2)
+  - integrations: claude_code (1)
+  - lib: misc (3)
+- **E2E (Playwright):** skeleton
+
+## Pendiente para v0.1.0 final
+
+- Task 53: Content editing (add text via lopdf)
+- Task 56: Auto-save background task
+- Task 59: Auto-update Tauri updater
+- Task 60: GitHub Actions release workflow con signing
+- Task 62: Release v0.1.0 final
+
+## Commits realizados
 
 ```
-e92d969 chore: scaffold Tauri 2 + React + TS template
-25405bc feat: setup Tailwind CSS + shadcn/ui
-cd196d8 test: setup Vitest + Cargo test + Playwright infrastructure
-f38b564 docs: restore design spec + phase 1 plans
-b41c565 feat: scaffold backend modules + frontend types
+abbf2e2 feat: Plan 1.3 partial - page editing + version history
+08b1719 feat(annotations): complete Plan 1.2 (Tasks 31-45)
+5de3fb4 feat: complete Plan 1.1 (Tasks 24-30)
+2f4ca51 docs: update phase 1 overview snapshot
+bca5136 feat(viewer): Sidebar + Thumbnails + Bookmarks + Search
+5fcab7c feat(viewer): implement full PDF viewer UI
+1dd834d feat(frontend): Tauri wrapper + Zustand stores
+ac5e4a1 feat(pdf): implement PDF engine core
+d6c37e5 feat(pdf): integrate pdfium-render 0.9 with bundled DLL
 03c2d14 ci: GitHub Actions workflows (CI + Release)
-d6c37e5 feat(pdf): integrate pdfium-render 0.9 with bundled PDFium DLL
-ac5e4a1 feat(pdf): implement PDF engine core (Tasks 7-13)
-1dd834d feat(frontend): Tauri wrapper + Zustand stores (Tasks 14-15)
-5fcab7c feat(viewer): implement full PDF viewer UI (Tasks 16-23 core)
-bca5136 feat(viewer): Sidebar + Thumbnails + Bookmarks + Search (Tasks 19-21)
+b41c565 feat: scaffold backend modules + frontend types
+f38b564 docs: restore design spec + phase 1 plans
+cd196d8 test: setup Vitest + Cargo test + Playwright
+25405bc feat: setup Tailwind CSS + shadcn/ui
+e92d969 chore: scaffold Tauri 2 + React + TS template
 ```
 
-## Próximos pasos
-
-1. Probar `pnpm tauri dev` manualmente con PDFs reales (3 días uso sugerido)
-2. Terminar Plan 1.1 (Tasks 24, 25, 28, 29, 30) en próxima sesión
-3. Ejecutar Plan 1.2 (anotaciones)
-4. Ejecutar Plan 1.3 (edición + MSI v0.1.0 release)
-
-## Cómo correr todo
+## Cómo correr
 
 ```powershell
 cd "D:\Dropbox\Claude Code\air-pdf"
-
-# PATH para esta terminal (si Rust no esta en PATH)
 $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
 
-# Desarrollo (hot reload Vite + Tauri)
-pnpm tauri dev
-
-# Tests
-pnpm test           # frontend
-pnpm test:rust      # backend
-
-# Build release (genera MSI en target/release/bundle/msi/)
-pnpm tauri build
+pnpm tauri dev      # desarrollo
+pnpm test           # frontend tests
+pnpm test:rust      # rust tests
+pnpm tauri build    # MSI release (5-10 min primera vez)
 ```
+
+## Próximos planes
+
+- **Plan 2 (Fase 2):** Formularios AcroForm/XFA + firmas (manuscrita, imagen, RENIEC PKI)
+- **Plan 3 (Fase 3):** OCR Tesseract + conversión LibreOffice (PDF↔Word/Excel/PPT)
+- **Plan 4 (Fase 4):** Edición avanzada (reflow texto, tablas, comparar versiones)
+- **Plan 5 (Fase 5):** Pro features (redacción, metadata scrub, formularios WYSIWYG) + IA completa
