@@ -110,3 +110,74 @@ export async function searchInPdf(
     context: m.context,
   }));
 }
+
+// ====== Recent files ======
+
+export interface RecentFile {
+  path: string;
+  lastOpened: string;
+}
+
+interface RecentFileResponse {
+  path: string;
+  last_opened: string;
+}
+
+interface RecentListResponse {
+  files: RecentFileResponse[];
+}
+
+export async function getRecentFiles(): Promise<RecentFile[]> {
+  const response = await invoke<RecentListResponse>("recent_list");
+  return response.files.map((f) => ({
+    path: f.path,
+    lastOpened: f.last_opened,
+  }));
+}
+
+export async function addRecentFile(path: string): Promise<void> {
+  await invoke("recent_add", { path });
+}
+
+export async function clearRecentFiles(): Promise<void> {
+  await invoke("recent_clear");
+}
+
+// ====== Settings ======
+
+export interface SettingsData {
+  general: {
+    default_view_mode: string;
+    default_zoom: string;
+    recent_files_limit: number;
+  };
+  annotations: {
+    storage_mode: string;
+    sync_to_dropbox: boolean;
+    default_author: string;
+  };
+  ai: {
+    mode: string;
+    confirm_before_cloud: boolean;
+  };
+}
+
+export async function loadSettings(): Promise<SettingsData> {
+  return await invoke<SettingsData>("settings_load");
+}
+
+export async function saveSettings(settings: SettingsData): Promise<void> {
+  await invoke("settings_save", { settings });
+}
+
+// ====== AI mode detection ======
+
+export type AiMode =
+  | { type: "pro"; version: string }
+  | { type: "cloud-only" }
+  | { type: "local-only" }
+  | { type: "none" };
+
+export async function detectAiMode(): Promise<AiMode> {
+  return await invoke<AiMode>("detect_ai_mode");
+}

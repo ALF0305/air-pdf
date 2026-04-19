@@ -5,16 +5,23 @@ import { PageNavigation } from "@/components/viewer/PageNavigation";
 import { ViewModeSelector } from "@/components/viewer/ViewModeSelector";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import { SearchDialog } from "@/components/dialogs/SearchDialog";
+import { RecentFilesMenu } from "@/components/dialogs/RecentFilesMenu";
+import { MenuBar } from "@/components/menu/MenuBar";
+import { StatusBar } from "@/components/statusbar/StatusBar";
+import { TabBar } from "@/components/tabs/TabBar";
 import { usePdfStore } from "@/stores/pdfStore";
 import { useUiStore } from "@/stores/uiStore";
-import { openPdf } from "@/lib/tauri";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { openPdf, addRecentFile } from "@/lib/tauri";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { useDragDrop } from "@/hooks/useDragDrop";
 import { FolderOpen, Search, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { useEffect } from "react";
 
 function App() {
   const addTab = usePdfStore((s) => s.addTab);
+  const closeTab = usePdfStore((s) => s.closeTab);
   const currentPage = usePdfStore((s) => s.currentPage);
   const setCurrentPage = usePdfStore((s) => s.setCurrentPage);
   const readingMode = useUiStore((s) => s.readingMode);
@@ -22,6 +29,12 @@ function App() {
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const toggleReadingMode = useUiStore((s) => s.toggleReadingMode);
   const setSearchDialogOpen = useUiStore((s) => s.setSearchDialogOpen);
+  const loadSettings = useSettingsStore((s) => s.load);
+
+  // Load settings on mount
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   const handleOpen = async () => {
     const selected = await open({
@@ -32,10 +45,18 @@ function App() {
       try {
         const doc = await openPdf(selected);
         addTab(doc);
+        await addRecentFile(selected);
       } catch (e) {
         alert(`Error abriendo PDF: ${e}`);
       }
     }
+  };
+
+  const handleSearch = () => setSearchDialogOpen(true);
+
+  const handleCloseTab = () => {
+    const tabId = usePdfStore.getState().activeTabId;
+    if (tabId) closeTab(tabId);
   };
 
   const goToNextPage = () => {
@@ -51,7 +72,8 @@ function App() {
 
   useShortcuts([
     { key: "o", ctrl: true, handler: handleOpen },
-    { key: "f", ctrl: true, handler: () => setSearchDialogOpen(true) },
+    { key: "w", ctrl: true, handler: handleCloseTab },
+    { key: "f", ctrl: true, handler: handleSearch },
     { key: "F11", handler: toggleReadingMode },
     { key: "Escape", handler: () => readingMode && toggleReadingMode() },
     { key: "PageDown", handler: goToNextPage },
@@ -74,6 +96,7 @@ function App() {
       try {
         const doc = await openPdf(path);
         addTab(doc);
+        await addRecentFile(path);
       } catch (e) {
         console.error("Cannot open dropped file", path, e);
       }
@@ -85,6 +108,8 @@ function App() {
       {!readingMode && (
         <header className="border-b px-2 py-1 flex items-center gap-2">
           <h1 className="text-sm font-semibold px-2">AirPDF</h1>
+          <MenuBar onOpen={handleOpen} onSearch={handleSearch} />
+          <div className="w-px h-6 bg-border" />
           <Button
             size="sm"
             variant="ghost"
@@ -95,6 +120,7 @@ function App() {
             <FolderOpen className="h-4 w-4" />
             Abrir
           </Button>
+          <RecentFilesMenu />
           <Button
             size="icon"
             variant="ghost"
@@ -110,7 +136,7 @@ function App() {
           <Button
             size="icon"
             variant="ghost"
-            onClick={() => setSearchDialogOpen(true)}
+            onClick={handleSearch}
             title="Buscar (Ctrl+F)"
           >
             <Search className="h-4 w-4" />
@@ -123,10 +149,12 @@ function App() {
           <ZoomControls />
         </header>
       )}
+      {!readingMode && <TabBar />}
       <main className="flex-1 flex overflow-hidden">
         {!readingMode && sidebarVisible && <Sidebar />}
         <PdfViewer />
       </main>
+      {!readingMode && <StatusBar />}
       <SearchDialog />
     </div>
   );

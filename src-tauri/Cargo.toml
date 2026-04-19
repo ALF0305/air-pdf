@@ -31,4 +31,5 @@ dirs = "5"
 chrono = { version = "0.4", features = ["serde"] }
 pdfium-render = { version = "0.9", features = ["thread_safe", "image_025"] }
 image = "0.25"
+toml = "0.8"
 
