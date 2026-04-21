@@ -1,6 +1,6 @@
 [package]
 name = "air-pdf"
-version = "0.1.0"
+version = "0.3.1"
 description = "Editor de PDFs standalone con IA opcional"
 authors = ["Alfredo Pachas"]
 edition = "2021"
@@ -18,7 +18,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
@@ -34,4 +34,7 @@ image = "0.25"
 toml = "0.8"
 sha2 = "0.10"
 lopdf = "0.34"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 

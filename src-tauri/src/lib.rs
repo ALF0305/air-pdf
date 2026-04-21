@@ -26,6 +26,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![
             greet,
             commands::pdf::pdf_open,
@@ -34,6 +36,7 @@ pub fn run() {
             commands::pdf::pdf_get_bookmarks,
             commands::pdf::pdf_get_pages_info,
             commands::pdf::pdf_save_backup,
+            commands::pdf::pdf_print,
             commands::search::pdf_search,
             commands::settings::settings_load,
             commands::settings::settings_save,
@@ -56,6 +59,29 @@ pub fn run() {
             commands::pages::pages_merge,
             commands::pages::pages_reorder,
             commands::pages::pages_split,
+            commands::transform::pages_duplicate,
+            commands::transform::pages_insert_blank,
+            commands::transform::pdf_export_page_image,
+            commands::transform::pdf_export_all_images,
+            commands::transform::pdf_from_images,
+            commands::transform::pdf_set_metadata,
+            commands::transform::pdf_compress,
+            commands::transform::pdf_watermark,
+            commands::transform::pdf_page_numbers,
+            commands::transform::pdf_rotate_document,
+            commands::transform::pdf_redact,
+            commands::transform::pdf_crop_uniform,
+            commands::transform::pdf_stamp_image,
+            commands::transform::pdf_extract_text_to_file,
+            commands::transform::pdf_stamp_text,
+            commands::transform::pdf_set_bookmarks,
+            commands::transform::pdf_compare,
+            commands::transform::pdf_list_form_fields,
+            commands::transform::pdf_ocr,
+            commands::transform::pdf_add_formatted_text,
+            commands::transform::pdf_list_system_fonts,
+            commands::ai::ai_ask_claude,
+            commands::ai::ai_read_local_api_key,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -50,3 +50,31 @@ pub async fn pdf_save_backup(path: String, backup_path: String) -> Result<(), St
     std::fs::copy(&path, &backup_path).map_err(|e| e.to_string())?;
     Ok(())
 }
+
+/// Launch Windows "print" verb via ShellExecute on the given PDF.
+/// This opens the system's default PDF printing flow (usually the printer picker).
+#[tauri::command]
+pub async fn pdf_print(path: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        use std::process::Command;
+        // Use PowerShell's Start-Process -Verb Print for reliable printer dialog.
+        // CREATE_NO_WINDOW = 0x08000000
+        let ps = format!(
+            "Start-Process -FilePath '{}' -Verb Print",
+            path.replace('\'', "''")
+        );
+        Command::new("powershell")
+            .creation_flags(0x0800_0000)
+            .args(["-NoProfile", "-WindowStyle", "Hidden", "-Command", &ps])
+            .spawn()
+            .map_err(|e| format!("Print failed: {}", e))?;
+        return Ok(());
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = path;
+        Err("Print only supported on Windows".to_string())
+    }
+}
