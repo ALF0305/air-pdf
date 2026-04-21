@@ -8,6 +8,25 @@ import { SearchDialog } from "@/components/dialogs/SearchDialog";
 import { RecentFilesMenu } from "@/components/dialogs/RecentFilesMenu";
 import { MergePdfsDialog } from "@/components/dialogs/MergePdfsDialog";
 import { SplitExtractDialog } from "@/components/dialogs/SplitExtractDialog";
+import { MetadataDialog } from "@/components/dialogs/MetadataDialog";
+import { CompressDialog } from "@/components/dialogs/CompressDialog";
+import { ExportImagesDialog } from "@/components/dialogs/ExportImagesDialog";
+import { ImagesToPdfDialog } from "@/components/dialogs/ImagesToPdfDialog";
+import { WatermarkDialog } from "@/components/dialogs/WatermarkDialog";
+import { PageNumbersDialog } from "@/components/dialogs/PageNumbersDialog";
+import { GotoDialog } from "@/components/dialogs/GotoDialog";
+import { CropDialog } from "@/components/dialogs/CropDialog";
+import { StampImageDialog } from "@/components/dialogs/StampImageDialog";
+import { AboutDialog } from "@/components/dialogs/AboutDialog";
+import { ShortcutsDialog } from "@/components/dialogs/ShortcutsDialog";
+import { StampPresetDialog } from "@/components/dialogs/StampPresetDialog";
+import { VersionsDialog } from "@/components/dialogs/VersionsDialog";
+import { BookmarksDialog } from "@/components/dialogs/BookmarksDialog";
+import { ComparePdfDialog } from "@/components/dialogs/ComparePdfDialog";
+import { FormFieldsDialog } from "@/components/dialogs/FormFieldsDialog";
+import { OcrDialog } from "@/components/dialogs/OcrDialog";
+import { AiDialog } from "@/components/dialogs/AiDialog";
+import { AddTextDialog } from "@/components/dialogs/AddTextDialog";
 import { MenuBar } from "@/components/menu/MenuBar";
 import { StatusBar } from "@/components/statusbar/StatusBar";
 import { TabBar } from "@/components/tabs/TabBar";
@@ -17,10 +36,12 @@ import { usePdfStore } from "@/stores/pdfStore";
 import { useUiStore } from "@/stores/uiStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useAnnotationStore } from "@/stores/annotationStore";
-import { openPdf, addRecentFile } from "@/lib/tauri";
+import { openPdf, addRecentFile, printPdf } from "@/lib/tauri";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { useDragDrop } from "@/hooks/useDragDrop";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { useUpdateCheck } from "@/hooks/useUpdateCheck";
 import { FolderOpen, Search, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useEffect } from "react";
 
@@ -35,11 +56,21 @@ function App() {
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const toggleReadingMode = useUiStore((s) => s.toggleReadingMode);
   const setSearchDialogOpen = useUiStore((s) => s.setSearchDialogOpen);
+  const setToolDialog = useUiStore((s) => s.setToolDialog);
   const loadSettings = useSettingsStore((s) => s.load);
   const loadAnnotations = useAnnotationStore((s) => s.load);
   const setTool = useAnnotationStore((s) => s.setTool);
   const selectedAnnId = useAnnotationStore((s) => s.selectedId);
   const removeAnnotation = useAnnotationStore((s) => s.remove);
+  const darkMode = useUiStore((s) => s.darkMode);
+  const toggleDarkMode = useUiStore((s) => s.toggleDarkMode);
+
+  // Apply dark mode class to html
+  useEffect(() => {
+    const el = document.documentElement;
+    if (darkMode) el.classList.add("dark");
+    else el.classList.remove("dark");
+  }, [darkMode]);
 
   // Load settings on mount
   useEffect(() => {
@@ -92,6 +123,56 @@ function App() {
     { key: "o", ctrl: true, handler: handleOpen },
     { key: "w", ctrl: true, handler: handleCloseTab },
     { key: "f", ctrl: true, handler: handleSearch },
+    { key: "g", ctrl: true, handler: () => setToolDialog("goto") },
+    { key: "F1", handler: () => setToolDialog("shortcuts") },
+    { key: "d", ctrl: true, shift: true, handler: toggleDarkMode },
+    { key: "z", ctrl: true, handler: () => setToolDialog("versions") },
+    { key: "t", ctrl: true, handler: () => setToolDialog("addText") },
+    {
+      key: "p",
+      ctrl: true,
+      handler: () => {
+        const tab = usePdfStore.getState().getActiveTab();
+        if (tab) printPdf(tab.path).catch((e) => alert(`Error: ${e}`));
+      },
+    },
+    {
+      key: "l",
+      ctrl: true,
+      handler: () => useUiStore.getState().togglePresentation(),
+    },
+    {
+      key: "=",
+      ctrl: true,
+      handler: () => {
+        const z = usePdfStore.getState().zoom;
+        const n = typeof z === "number" ? z : 1;
+        usePdfStore.getState().setZoom(Math.min(5, +(n + 0.15).toFixed(2)));
+      },
+    },
+    {
+      key: "+",
+      ctrl: true,
+      handler: () => {
+        const z = usePdfStore.getState().zoom;
+        const n = typeof z === "number" ? z : 1;
+        usePdfStore.getState().setZoom(Math.min(5, +(n + 0.15).toFixed(2)));
+      },
+    },
+    {
+      key: "-",
+      ctrl: true,
+      handler: () => {
+        const z = usePdfStore.getState().zoom;
+        const n = typeof z === "number" ? z : 1;
+        usePdfStore.getState().setZoom(Math.max(0.25, +(n - 0.15).toFixed(2)));
+      },
+    },
+    {
+      key: "0",
+      ctrl: true,
+      handler: () => usePdfStore.getState().setZoom(1),
+    },
     { key: "F11", handler: toggleReadingMode },
     { key: "Escape", handler: () => readingMode && toggleReadingMode() },
     { key: "PageDown", handler: goToNextPage },
@@ -121,6 +202,9 @@ function App() {
     },
   ]);
 
+  useAutoSave();
+  useUpdateCheck();
+
   useDragDrop(async (paths) => {
     for (const path of paths) {
       try {
@@ -136,7 +220,7 @@ function App() {
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground">
       {!readingMode && (
-        <header className="border-b px-2 py-1 flex items-center gap-2">
+        <header className="border-b px-2 py-1 flex items-center gap-2 bg-muted/60">
           <h1 className="text-sm font-semibold px-2">AirPDF</h1>
           <MenuBar onOpen={handleOpen} onSearch={handleSearch} />
           <div className="w-px h-6 bg-border" />
@@ -193,8 +277,35 @@ function App() {
       <SearchDialog />
       <MergeDialogMount />
       <SplitDialogMount />
+      <ToolDialogMount />
     </div>
   );
+}
+
+function ToolDialogMount() {
+  const dialog = useUiStore((s) => s.toolDialog);
+  const setDialog = useUiStore((s) => s.setToolDialog);
+  const close = () => setDialog(null);
+  if (dialog === "metadata") return <MetadataDialog open={true} onClose={close} />;
+  if (dialog === "compress") return <CompressDialog open={true} onClose={close} />;
+  if (dialog === "exportImages") return <ExportImagesDialog open={true} onClose={close} />;
+  if (dialog === "imagesToPdf") return <ImagesToPdfDialog open={true} onClose={close} />;
+  if (dialog === "watermark") return <WatermarkDialog open={true} onClose={close} />;
+  if (dialog === "pageNumbers") return <PageNumbersDialog open={true} onClose={close} />;
+  if (dialog === "goto") return <GotoDialog open={true} onClose={close} />;
+  if (dialog === "crop") return <CropDialog open={true} onClose={close} />;
+  if (dialog === "stamp") return <StampImageDialog open={true} onClose={close} />;
+  if (dialog === "about") return <AboutDialog open={true} onClose={close} />;
+  if (dialog === "shortcuts") return <ShortcutsDialog open={true} onClose={close} />;
+  if (dialog === "stampPreset") return <StampPresetDialog open={true} onClose={close} />;
+  if (dialog === "versions") return <VersionsDialog open={true} onClose={close} />;
+  if (dialog === "bookmarks") return <BookmarksDialog open={true} onClose={close} />;
+  if (dialog === "comparePdf") return <ComparePdfDialog open={true} onClose={close} />;
+  if (dialog === "formFields") return <FormFieldsDialog open={true} onClose={close} />;
+  if (dialog === "ocr") return <OcrDialog open={true} onClose={close} />;
+  if (dialog === "ai") return <AiDialog open={true} onClose={close} />;
+  if (dialog === "addText") return <AddTextDialog open={true} onClose={close} />;
+  return null;
 }
 
 function MergeDialogMount() {

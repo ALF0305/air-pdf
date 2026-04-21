@@ -1,11 +1,20 @@
 import { Button } from "@/components/ui/button";
-import { RotateCw, RotateCcw, Scissors, Trash2 } from "lucide-react";
+import {
+  RotateCw,
+  RotateCcw,
+  Scissors,
+  Trash2,
+  Copy,
+  FilePlus,
+} from "lucide-react";
 import { usePdfStore } from "@/stores/pdfStore";
 import { useUiStore } from "@/stores/uiStore";
 import {
   rotatePages,
   extractPages,
   deletePages,
+  duplicatePage,
+  insertBlankPage,
   savePdfBackup,
   saveVersion,
 } from "@/lib/tauri";
@@ -76,6 +85,38 @@ export function MainToolbar() {
     }
   };
 
+  const duplicateCurrent = async () => {
+    if (!activeTab) return;
+    if (!confirm(`Duplicar página ${currentPage + 1}? Se crea backup .bak.`))
+      return;
+    try {
+      await saveVersion(activeTab.path);
+      await savePdfBackup(activeTab.path, activeTab.path + ".bak");
+      await duplicatePage(activeTab.path, activeTab.path, currentPage);
+      bumpRefresh();
+    } catch (e) {
+      alert(`Error duplicando: ${e}`);
+    }
+  };
+
+  const insertBlankAfter = async () => {
+    if (!activeTab) return;
+    if (
+      !confirm(
+        `Insertar página en blanco después de la página ${currentPage + 1}? Se crea backup .bak.`
+      )
+    )
+      return;
+    try {
+      await saveVersion(activeTab.path);
+      await savePdfBackup(activeTab.path, activeTab.path + ".bak");
+      await insertBlankPage(activeTab.path, activeTab.path, currentPage + 1);
+      bumpRefresh();
+    } catch (e) {
+      alert(`Error insertando: ${e}`);
+    }
+  };
+
   if (!activeTab) return null;
 
   return (
@@ -95,6 +136,22 @@ export function MainToolbar() {
         title="Rotar derecha 90°"
       >
         <RotateCw className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={duplicateCurrent}
+        title="Duplicar página actual"
+      >
+        <Copy className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={insertBlankAfter}
+        title="Insertar página en blanco después"
+      >
+        <FilePlus className="h-4 w-4" />
       </Button>
       <Button
         variant="ghost"

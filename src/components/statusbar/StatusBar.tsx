@@ -61,7 +61,7 @@ export function StatusBar() {
     : null;
 
   return (
-    <footer className="border-t px-3 py-1 flex items-center justify-between text-xs text-muted-foreground bg-muted/10">
+    <footer className="border-t px-3 py-1 flex items-center justify-between text-xs text-muted-foreground bg-muted/60">
       <div className="truncate">
         {activeTab
           ? `${filename} — Pág ${currentPage + 1} / ${activeTab.pageCount}`

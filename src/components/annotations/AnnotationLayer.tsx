@@ -2,6 +2,8 @@ import { useAnnotationStore } from "@/stores/annotationStore";
 import { usePageInteraction } from "@/hooks/usePageInteraction";
 import type { Annotation } from "@/types/annotations";
 import type React from "react";
+import { ResizableBox } from "./ResizableBox";
+import { convertFileSrc } from "@tauri-apps/api/core";
 
 interface Props {
   pageIndex: number;
@@ -205,6 +207,11 @@ function renderAnnotation(
         </svg>
       );
     }
+    case "freetext":
+    case "image":
+      // These are rendered specially in the AnnotationLayer render fn below
+      // (they need ResizableBox + update callbacks), so skip here.
+      return null;
     case "stamp": {
       const fgColor = (a.data as { fgColor?: string })?.fgColor || "#FFFFFF";
       return (
@@ -239,6 +246,8 @@ export function AnnotationLayer({ pageIndex, width, height, scale }: Props) {
   const annotations = useAnnotationStore((s) => s.annotations);
   const selectedId = useAnnotationStore((s) => s.selectedId);
   const select = useAnnotationStore((s) => s.selectAnnotation);
+  const updateAnn = useAnnotationStore((s) => s.update);
+  const removeAnn = useAnnotationStore((s) => s.remove);
   const {
     onMouseDown,
     onMouseMove,
@@ -252,6 +261,103 @@ export function AnnotationLayer({ pageIndex, width, height, scale }: Props) {
 
   const canSelect = tool === "select";
   const pageAnnotations = annotations.filter((a) => a.page === pageIndex);
+
+  // Freetext and image use interactive ResizableBox; always movable/resizable.
+  const renderMovable = (a: Annotation) => {
+    const [x1, y1, x2, y2] = a.rect;
+    const isSel = a.id === selectedId;
+    const onBoxChange = (b: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }) => {
+      updateAnn({
+        ...a,
+        rect: [b.x, b.y, b.x + b.width, b.y + b.height],
+      });
+    };
+    if (a.type === "freetext") {
+      const d = a.data as {
+        font?: string;
+        size?: number;
+        bold?: boolean;
+        italic?: boolean;
+        color?: string;
+      } | undefined;
+      const fontSize = (d?.size ?? 14) * scale;
+      return (
+        <ResizableBox
+          key={a.id}
+          x={x1}
+          y={y1}
+          width={x2 - x1}
+          height={y2 - y1}
+          scale={scale}
+          selected={isSel}
+          onChange={onBoxChange}
+          onSelect={() => select(a.id)}
+          onDelete={() => removeAnn(a.id)}
+          minWidth={30}
+          minHeight={14}
+        >
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              pointerEvents: "none",
+              fontFamily: d?.font ?? "Arial",
+              fontSize,
+              fontWeight: d?.bold ? 700 : 400,
+              fontStyle: d?.italic ? "italic" : "normal",
+              color: d?.color ?? a.color ?? "#000000",
+              lineHeight: 1.2,
+              whiteSpace: "pre-wrap",
+              overflow: "hidden",
+              padding: 1,
+            }}
+          >
+            {a.text}
+          </div>
+        </ResizableBox>
+      );
+    }
+    if (a.type === "image") {
+      const d = a.data as { imagePath?: string } | undefined;
+      const src = d?.imagePath ? convertFileSrc(d.imagePath) : "";
+      return (
+        <ResizableBox
+          key={a.id}
+          x={x1}
+          y={y1}
+          width={x2 - x1}
+          height={y2 - y1}
+          scale={scale}
+          selected={isSel}
+          onChange={onBoxChange}
+          onSelect={() => select(a.id)}
+          onDelete={() => removeAnn(a.id)}
+          minWidth={20}
+          minHeight={20}
+          lockAspect
+        >
+          <img
+            src={src}
+            alt=""
+            draggable={false}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              pointerEvents: "none",
+              userSelect: "none",
+            }}
+          />
+        </ResizableBox>
+      );
+    }
+    return null;
+  };
 
   return (
     <div
@@ -268,7 +374,9 @@ export function AnnotationLayer({ pageIndex, width, height, scale }: Props) {
       onClick={() => canSelect && select(null)}
     >
       {pageAnnotations.map((a) =>
-        renderAnnotation(a, scale, a.id === selectedId, select, canSelect)
+        a.type === "freetext" || a.type === "image"
+          ? renderMovable(a)
+          : renderAnnotation(a, scale, a.id === selectedId, select, canSelect)
       )}
       {drag && (
         <div

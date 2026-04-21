@@ -372,9 +372,327 @@ export async function savePdfBackup(
   await invoke("pdf_save_backup", { path, backupPath });
 }
 
+export async function printPdf(path: string): Promise<void> {
+  await invoke("pdf_print", { path });
+}
+
 export async function embedAnnotationsIntoPdf(
   pdfPath: string,
   outputPath: string
 ): Promise<void> {
   await invoke("annotations_embed_into_pdf", { pdfPath, outputPath });
+}
+
+// ====== Transform ops ======
+
+export async function duplicatePage(
+  inputPath: string,
+  outputPath: string,
+  pageIndex: number
+): Promise<void> {
+  await invoke("pages_duplicate", { inputPath, outputPath, pageIndex });
+}
+
+export async function insertBlankPage(
+  inputPath: string,
+  outputPath: string,
+  atIndex: number,
+  widthPoints?: number,
+  heightPoints?: number
+): Promise<void> {
+  await invoke("pages_insert_blank", {
+    inputPath,
+    outputPath,
+    atIndex,
+    widthPoints: widthPoints ?? null,
+    heightPoints: heightPoints ?? null,
+  });
+}
+
+export async function exportPageAsImage(
+  inputPath: string,
+  pageIndex: number,
+  outputPath: string,
+  dpi: number,
+  format: "png" | "jpg"
+): Promise<void> {
+  await invoke("pdf_export_page_image", {
+    inputPath,
+    pageIndex,
+    outputPath,
+    dpi,
+    format,
+  });
+}
+
+export async function exportAllPagesAsImages(
+  inputPath: string,
+  outputDir: string,
+  dpi: number,
+  format: "png" | "jpg"
+): Promise<string[]> {
+  return await invoke<string[]>("pdf_export_all_images", {
+    inputPath,
+    outputDir,
+    dpi,
+    format,
+  });
+}
+
+export async function pdfFromImages(
+  imagePaths: string[],
+  outputPath: string
+): Promise<void> {
+  await invoke("pdf_from_images", { imagePaths, outputPath });
+}
+
+export async function setPdfMetadata(
+  inputPath: string,
+  outputPath: string,
+  fields: {
+    title?: string;
+    author?: string;
+    subject?: string;
+    keywords?: string;
+  }
+): Promise<void> {
+  await invoke("pdf_set_metadata", {
+    inputPath,
+    outputPath,
+    title: fields.title ?? null,
+    author: fields.author ?? null,
+    subject: fields.subject ?? null,
+    keywords: fields.keywords ?? null,
+  });
+}
+
+export async function compressPdf(
+  inputPath: string,
+  outputPath: string
+): Promise<{ before: number; after: number }> {
+  const [before, after] = await invoke<[number, number]>("pdf_compress", {
+    inputPath,
+    outputPath,
+  });
+  return { before, after };
+}
+
+export async function watermarkPdf(
+  inputPath: string,
+  outputPath: string,
+  text: string,
+  fontSize: number,
+  opacity: number
+): Promise<void> {
+  await invoke("pdf_watermark", {
+    inputPath,
+    outputPath,
+    text,
+    fontSize,
+    opacity,
+  });
+}
+
+export async function pageNumbersPdf(
+  inputPath: string,
+  outputPath: string,
+  format: string,
+  fontSize: number
+): Promise<void> {
+  await invoke("pdf_page_numbers", {
+    inputPath,
+    outputPath,
+    format,
+    fontSize,
+  });
+}
+
+export async function rotateDocument(
+  inputPath: string,
+  outputPath: string,
+  degrees: number
+): Promise<void> {
+  await invoke("pdf_rotate_document", { inputPath, outputPath, degrees });
+}
+
+export interface RedactRect {
+  page: number;
+  bottom: number;
+  left: number;
+  top: number;
+  right: number;
+}
+
+export async function redactPdf(
+  inputPath: string,
+  outputPath: string,
+  rects: RedactRect[]
+): Promise<void> {
+  await invoke("pdf_redact", { inputPath, outputPath, rects });
+}
+
+export async function cropPdfUniform(
+  inputPath: string,
+  outputPath: string,
+  top: number,
+  right: number,
+  bottom: number,
+  left: number
+): Promise<void> {
+  await invoke("pdf_crop_uniform", {
+    inputPath,
+    outputPath,
+    top,
+    right,
+    bottom,
+    left,
+  });
+}
+
+export async function stampImage(
+  inputPath: string,
+  outputPath: string,
+  pageIndex: number,
+  imagePath: string,
+  left: number,
+  bottom: number,
+  width: number,
+  height: number
+): Promise<void> {
+  await invoke("pdf_stamp_image", {
+    inputPath,
+    outputPath,
+    pageIndex,
+    imagePath,
+    left,
+    bottom,
+    width,
+    height,
+  });
+}
+
+export async function extractTextToFile(
+  inputPath: string,
+  outputPath: string
+): Promise<void> {
+  await invoke("pdf_extract_text_to_file", { inputPath, outputPath });
+}
+
+export type StampPosition =
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right"
+  | "center";
+
+export interface PageDiff {
+  page: number;
+  only_in_a: string[];
+  only_in_b: string[];
+}
+
+export async function askClaude(
+  apiKey: string,
+  prompt: string
+): Promise<string> {
+  return await invoke<string>("ai_ask_claude", { apiKey, prompt });
+}
+
+export async function readLocalApiKey(): Promise<string> {
+  return await invoke<string>("ai_read_local_api_key");
+}
+
+export async function ocrPdf(
+  inputPath: string,
+  lang: string
+): Promise<string> {
+  return await invoke<string>("pdf_ocr", { inputPath, lang });
+}
+
+export async function listFormFields(
+  inputPath: string
+): Promise<[string, string | null][]> {
+  return await invoke<[string, string | null][]>("pdf_list_form_fields", {
+    inputPath,
+  });
+}
+
+export async function comparePdfs(
+  pathA: string,
+  pathB: string
+): Promise<PageDiff[]> {
+  return await invoke<PageDiff[]>("pdf_compare", { pathA, pathB });
+}
+
+export interface BookmarkEdit {
+  title: string;
+  page: number;
+}
+
+export async function setBookmarks(
+  inputPath: string,
+  outputPath: string,
+  bookmarks: BookmarkEdit[]
+): Promise<void> {
+  await invoke("pdf_set_bookmarks", { inputPath, outputPath, bookmarks });
+}
+
+export async function addFormattedText(params: {
+  inputPath: string;
+  outputPath: string;
+  pageIndex: number;
+  text: string;
+  x: number;
+  y: number;
+  fontSize: number;
+  color: [number, number, number];
+  ttfPath: string | null;
+  familyFallback: "helvetica" | "times" | "courier";
+  bold: boolean;
+  italic: boolean;
+}): Promise<void> {
+  await invoke("pdf_add_formatted_text", {
+    inputPath: params.inputPath,
+    outputPath: params.outputPath,
+    pageIndex: params.pageIndex,
+    text: params.text,
+    x: params.x,
+    y: params.y,
+    fontSize: params.fontSize,
+    colorR: params.color[0],
+    colorG: params.color[1],
+    colorB: params.color[2],
+    ttfPath: params.ttfPath,
+    familyFallback: params.familyFallback,
+    bold: params.bold,
+    italic: params.italic,
+  });
+}
+
+export async function listSystemFonts(): Promise<[string, string][]> {
+  return await invoke<[string, string][]>("pdf_list_system_fonts");
+}
+
+export async function stampText(
+  inputPath: string,
+  outputPath: string,
+  text: string,
+  fontSize: number,
+  color: [number, number, number],
+  position: StampPosition,
+  onlyPage?: number
+): Promise<void> {
+  await invoke("pdf_stamp_text", {
+    inputPath,
+    outputPath,
+    text,
+    fontSize,
+    colorR: color[0],
+    colorG: color[1],
+    colorB: color[2],
+    position,
+    onlyPage: onlyPage ?? null,
+  });
 }

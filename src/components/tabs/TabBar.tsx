@@ -10,7 +10,7 @@ export function TabBar() {
   if (tabs.length === 0) return null;
 
   return (
-    <div className="flex border-b bg-muted/20 overflow-x-auto scrollbar-thin">
+    <div className="flex border-b bg-muted/40 overflow-x-auto scrollbar-thin">
       {tabs.map((doc) => (
         <Tab
           key={doc.id}

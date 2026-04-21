@@ -7,7 +7,25 @@ export type AnnotationType =
   | "stamp"
   | "rect"
   | "circle"
-  | "arrow";
+  | "arrow"
+  | "freetext"
+  | "image";
+
+export interface ImageData {
+  imagePath: string;
+  nativeWidth?: number;
+  nativeHeight?: number;
+}
+
+export interface FreetextData {
+  font: string;
+  size: number;
+  bold: boolean;
+  italic: boolean;
+  color: string;
+  ttfPath?: string | null;
+  familyFallback?: "helvetica" | "times" | "courier";
+}
 
 export interface Annotation {
   id: string;

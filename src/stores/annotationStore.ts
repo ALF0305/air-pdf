@@ -12,7 +12,9 @@ export type Tool =
   | "stamp"
   | "rect"
   | "circle"
-  | "arrow";
+  | "arrow"
+  | "freetext"
+  | "image";
 
 interface AnnotationStore {
   pdfPath: string | null;

@@ -12,7 +12,7 @@ export function Sidebar() {
 
   return (
     <div className="flex h-full">
-      <div className="w-12 border-r flex flex-col items-center py-2 gap-1 bg-muted/20">
+      <div className="w-12 border-r flex flex-col items-center py-2 gap-1 bg-muted/60">
         <Button
           variant={active === "thumbnails" ? "secondary" : "ghost"}
           size="icon"

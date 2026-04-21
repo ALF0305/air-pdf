@@ -11,6 +11,8 @@ import {
   Square,
   Circle,
   ArrowUpRight,
+  Type,
+  ImagePlus,
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -21,6 +23,8 @@ const TOOLS: {
   shortcut?: string;
 }[] = [
   { tool: "select", icon: MousePointer2, label: "Seleccionar", shortcut: "S" },
+  { tool: "freetext", icon: Type, label: "Añadir texto", shortcut: "T" },
+  { tool: "image", icon: ImagePlus, label: "Agregar imagen", shortcut: "I" },
   { tool: "highlight", icon: Highlighter, label: "Resaltar", shortcut: "H" },
   { tool: "underline", icon: Underline, label: "Subrayar", shortcut: "U" },
   { tool: "strikethrough", icon: Strikethrough, label: "Tachar" },
@@ -61,7 +65,7 @@ export function AnnotationToolbar() {
   const setCategory = useAnnotationStore((s) => s.setCategory);
 
   return (
-    <div className="flex items-center gap-2 border-b px-2 py-1 bg-muted/20">
+    <div className="flex items-center gap-2 border-b px-2 py-1 bg-muted/50">
       <div className="flex items-center gap-0.5">
         {TOOLS.map(({ tool, icon: Icon, label, shortcut }) => (
           <Button
