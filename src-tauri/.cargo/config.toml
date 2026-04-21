@@ -1,0 +1,9 @@
+# Cargo config para AirPDF.
+#
+# RUST_TEST_THREADS=1: la inicializacion de PDFium no es segura para carga
+# concurrente (ver pdf::engine::pdfium()) y los tests que la usan corren
+# en el mismo proceso. Ejecutarlos en serie evita el crash 0x80000003
+# (STATUS_BREAKPOINT) que se ve si dos tests intentan cargar pdfium.dll
+# al mismo tiempo.
+[env]
+RUST_TEST_THREADS = "1"

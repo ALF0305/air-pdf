@@ -76,3 +76,26 @@ pub async fn ask_claude(api_key: &str, prompt: &str) -> Result<String> {
     }
     Ok(out)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_ask_claude_rejects_empty_api_key() {
+        let r = ask_claude("", "hola").await;
+        assert!(r.is_err(), "empty key must error, got {:?}", r);
+        let err = format!("{:?}", r.unwrap_err());
+        assert!(
+            err.contains("API key"),
+            "error should mention API key, got: {}",
+            err
+        );
+    }
+
+    #[tokio::test]
+    async fn test_ask_claude_rejects_whitespace_api_key() {
+        let r = ask_claude("   \t\n  ", "hola").await;
+        assert!(r.is_err(), "whitespace-only key must error");
+    }
+}

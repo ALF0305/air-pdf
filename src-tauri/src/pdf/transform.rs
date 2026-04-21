@@ -1132,4 +1132,126 @@ mod tests {
         let r = compress_pdf(&fixture("sample-paper.pdf"), &tmp);
         assert!(r.is_ok(), "compress should succeed: {:?}", r);
     }
+
+    #[test]
+    fn test_rotate_document_sets_rotate_key_on_first_page() {
+        let tmp = std::env::temp_dir().join("airpdf-rotate-90.pdf");
+        let r = rotate_document(&fixture("sample-paper.pdf"), &tmp, 90);
+        assert!(r.is_ok(), "rotate should succeed: {:?}", r);
+
+        let doc = Document::load(&tmp).expect("rotated pdf should load");
+        let pages = doc.get_pages();
+        let first_id = *pages.values().next().expect("has at least one page");
+        let page_dict = doc
+            .get_object(first_id)
+            .and_then(|o| o.as_dict())
+            .expect("page object is dict");
+        let rotate = page_dict
+            .get(b"Rotate")
+            .and_then(|o| o.as_i64())
+            .expect("Rotate key present after rotation");
+        assert_eq!(rotate, 90, "Rotate should be 90 after single rotation");
+    }
+
+    #[test]
+    fn test_rotate_document_is_cumulative() {
+        let tmp1 = std::env::temp_dir().join("airpdf-rotate-step1.pdf");
+        let tmp2 = std::env::temp_dir().join("airpdf-rotate-step2.pdf");
+
+        rotate_document(&fixture("sample-paper.pdf"), &tmp1, 90).expect("step1");
+        rotate_document(&tmp1, &tmp2, 90).expect("step2");
+
+        let doc = Document::load(&tmp2).unwrap();
+        let pages = doc.get_pages();
+        let first_id = *pages.values().next().unwrap();
+        let rotate = doc
+            .get_object(first_id)
+            .and_then(|o| o.as_dict())
+            .unwrap()
+            .get(b"Rotate")
+            .and_then(|o| o.as_i64())
+            .unwrap();
+        assert_eq!(rotate, 180, "Two 90-degree rotations should accumulate to 180");
+    }
+
+    #[test]
+    fn test_rotate_document_negative_normalizes_to_positive() {
+        let tmp = std::env::temp_dir().join("airpdf-rotate-neg.pdf");
+        rotate_document(&fixture("sample-paper.pdf"), &tmp, -90).expect("rotate -90");
+
+        let doc = Document::load(&tmp).unwrap();
+        let pages = doc.get_pages();
+        let first_id = *pages.values().next().unwrap();
+        let rotate = doc
+            .get_object(first_id)
+            .and_then(|o| o.as_dict())
+            .unwrap()
+            .get(b"Rotate")
+            .and_then(|o| o.as_i64())
+            .unwrap();
+        assert_eq!(rotate, 270, "-90 should normalize to 270 (mod 360)");
+    }
+
+    #[test]
+    fn test_set_metadata_round_trip_title_and_author() {
+        let tmp = std::env::temp_dir().join("airpdf-metadata.pdf");
+        let edit = PdfMetadataEdit {
+            title: Some("AirPDF Test".to_string()),
+            author: Some("Alfredo".to_string()),
+            subject: None,
+            keywords: None,
+        };
+        set_metadata(&fixture("sample-paper.pdf"), &tmp, &edit).expect("set_metadata");
+
+        let doc = Document::load(&tmp).expect("reload pdf");
+        let info_id = doc.trailer.get(b"Info").unwrap().as_reference().unwrap();
+        let info = doc
+            .get_object(info_id)
+            .and_then(|o| o.as_dict())
+            .expect("Info dict present");
+
+        let read_str = |k: &[u8]| -> Option<String> {
+            info.get(k).ok().and_then(|o| match o {
+                Object::String(bytes, _) => Some(String::from_utf8_lossy(bytes).to_string()),
+                _ => None,
+            })
+        };
+
+        assert_eq!(read_str(b"Title").as_deref(), Some("AirPDF Test"));
+        assert_eq!(read_str(b"Author").as_deref(), Some("Alfredo"));
+    }
+
+    #[test]
+    fn test_set_flat_bookmarks_creates_outline_entry() {
+        let tmp = std::env::temp_dir().join("airpdf-bookmarks.pdf");
+        // page es 0-indexed dentro de BookmarkEntry (la funcion suma +1
+        // internamente para mapearlo al ID 1-based que usa lopdf).
+        let entries = vec![
+            BookmarkEntry {
+                title: "Portada".to_string(),
+                page: 0,
+            },
+            BookmarkEntry {
+                title: "Introduccion".to_string(),
+                page: 0,
+            },
+        ];
+        let r = set_flat_bookmarks(&fixture("sample-paper.pdf"), &tmp, &entries);
+        assert!(r.is_ok(), "set_flat_bookmarks should succeed: {:?}", r);
+
+        let doc = Document::load(&tmp).expect("reload");
+        let catalog_id = doc
+            .trailer
+            .get(b"Root")
+            .and_then(|o| o.as_reference())
+            .expect("Root reference");
+        let catalog = doc
+            .get_object(catalog_id)
+            .and_then(|o| o.as_dict())
+            .expect("Catalog dict");
+        assert!(
+            catalog.has(b"Outlines"),
+            "catalog must reference Outlines after set_flat_bookmarks"
+        );
+    }
 }
