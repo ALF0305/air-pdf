@@ -1,5 +1,32 @@
 # AirPDF Changelog
 
+## 0.3.1 (2026-04-20)
+
+Release de consolidación — mismas features de 0.3.0 con foco en calidad.
+
+### Infra
+- Tests backend: de 33 a 40 (+7). Cobertura nueva para `pdf::transform`
+  (rotate x3, set_metadata, set_flat_bookmarks) y `integrations::ai`
+  (rechazo de API key vacía/whitespace).
+- `src-tauri/.cargo/config.toml` con `RUST_TEST_THREADS=1` para evitar
+  crash 0x80000003 cuando varios tests cargan `pdfium.dll` en paralelo.
+- CI GitHub Actions refrescado: pnpm 10, node 20, Swatinem cache, firma
+  con `TAURI_SIGNING_PRIVATE_KEY`, genera `latest.json` automático para
+  el updater.
+
+### Docs
+- `docs/decisions/0001-text-editing-limitations.md`: ADR que explica
+  por qué la edición de texto existente con reflow queda en Fase 4.
+- Plan overview Fase 1 reescrito para reflejar que se shipped al 100%.
+- `SETUP-GITHUB.md` movido a `.gitignore` (contenía la private key
+  inline del updater).
+
+### Bloqueado a Fase 2+
+Sin cambios respecto a 0.3.0: password PDF, firma RENIEC PKI, reflow
+de texto existente, code signing EV cert.
+
+---
+
 ## 0.3.0 (2026-04-19)
 
 Release con foco en workflow clínico y productividad.
