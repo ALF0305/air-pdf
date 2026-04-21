@@ -44,3 +44,10 @@ installers/windows/*.exe
 .env.local
 *.pfx
 *.p12
+
+# Tauri updater private key (NEVER commit)
+brand/airpdf-updater.key
+brand/*.key
+
+# Local-only notes (contienen secretos en texto, no publicar)
+SETUP-GITHUB.md
