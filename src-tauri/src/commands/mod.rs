@@ -6,3 +6,4 @@ pub mod content_edit;
 pub mod settings;
 pub mod transform;
 pub mod ai;
+pub mod security;

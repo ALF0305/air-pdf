@@ -82,6 +82,10 @@ pub fn run() {
             commands::transform::pdf_list_system_fonts,
             commands::ai::ai_ask_claude,
             commands::ai::ai_read_local_api_key,
+            commands::security::pdf_is_encrypted,
+            commands::security::pdf_encrypt,
+            commands::security::pdf_decrypt,
+            commands::security::pdf_linearize,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
