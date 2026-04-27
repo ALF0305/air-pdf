@@ -9,3 +9,4 @@ pub mod ai;
 pub mod security;
 pub mod sanitize;
 pub mod auto_redact;
+pub mod blank_pages;

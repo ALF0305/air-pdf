@@ -313,6 +313,12 @@ export function MenuBar({ onOpen, onSearch }: Props) {
           >
             Anonimizar (auto-redact DNI, teléfono, email)...
           </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setToolDialog("blankPages")}
+            disabled={!activeTabId}
+          >
+            Detectar y eliminar páginas en blanco...
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => handleRotateAll(90)}

@@ -886,3 +886,52 @@ export async function autoRedactPdfPreview(
     customPatterns: options.customPatterns ?? [],
   });
 }
+
+// ============================================================
+// Blank page detection (Stirling mapping #3)
+// ============================================================
+
+export interface BlankDetectOptions {
+  /** Limite de chars no-whitespace para considerar pagina sin texto. Default 3. */
+  maxTextChars?: number;
+  /** Tamano minimo en pt para considerar imagen significativa. Default 20. */
+  minImageSizePt?: number;
+}
+
+export interface BlankDetectionReport {
+  total_pages: number;
+  /** Indices 0-based de paginas detectadas como en blanco. */
+  blank_pages: number[];
+}
+
+/**
+ * Solo escanea: devuelve indices de paginas detectadas como en blanco.
+ * No modifica el archivo.
+ */
+export async function detectBlankPages(
+  inputPath: string,
+  options: BlankDetectOptions = {}
+): Promise<BlankDetectionReport> {
+  return await invoke<BlankDetectionReport>("pdf_detect_blank_pages", {
+    inputPath,
+    maxTextChars: options.maxTextChars ?? null,
+    minImageSizePt: options.minImageSizePt ?? null,
+  });
+}
+
+/**
+ * Detecta y elimina las paginas blank, escribe el resultado en outputPath.
+ * El archivo original no se modifica.
+ */
+export async function deleteBlankPages(
+  inputPath: string,
+  outputPath: string,
+  options: BlankDetectOptions = {}
+): Promise<BlankDetectionReport> {
+  return await invoke<BlankDetectionReport>("pdf_delete_blank_pages", {
+    inputPath,
+    outputPath,
+    maxTextChars: options.maxTextChars ?? null,
+    minImageSizePt: options.minImageSizePt ?? null,
+  });
+}

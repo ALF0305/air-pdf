@@ -30,6 +30,7 @@ import { AddTextDialog } from "@/components/dialogs/AddTextDialog";
 import { PasswordDialog } from "@/components/dialogs/PasswordDialog";
 import { SanitizeDialog } from "@/components/dialogs/SanitizeDialog";
 import { AutoRedactDialog } from "@/components/dialogs/AutoRedactDialog";
+import { BlankPagesDialog } from "@/components/dialogs/BlankPagesDialog";
 import { MenuBar } from "@/components/menu/MenuBar";
 import { StatusBar } from "@/components/statusbar/StatusBar";
 import { TabBar } from "@/components/tabs/TabBar";
@@ -306,6 +307,7 @@ function ToolDialogMount() {
   if (dialog === "password") return <PasswordDialog open={true} onClose={close} />;
   if (dialog === "sanitize") return <SanitizeDialog open={true} onClose={close} />;
   if (dialog === "autoRedact") return <AutoRedactDialog open={true} onClose={close} />;
+  if (dialog === "blankPages") return <BlankPagesDialog open={true} onClose={close} />;
   return null;
 }
 
