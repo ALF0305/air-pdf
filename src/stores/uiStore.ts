@@ -45,7 +45,8 @@ export type ToolDialog =
   | "formFields"
   | "ocr"
   | "ai"
-  | "addText";
+  | "addText"
+  | "sanitize";
 
 interface UiStore {
   readingMode: boolean;

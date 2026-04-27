@@ -28,6 +28,7 @@ import { OcrDialog } from "@/components/dialogs/OcrDialog";
 import { AiDialog } from "@/components/dialogs/AiDialog";
 import { AddTextDialog } from "@/components/dialogs/AddTextDialog";
 import { PasswordDialog } from "@/components/dialogs/PasswordDialog";
+import { SanitizeDialog } from "@/components/dialogs/SanitizeDialog";
 import { MenuBar } from "@/components/menu/MenuBar";
 import { StatusBar } from "@/components/statusbar/StatusBar";
 import { TabBar } from "@/components/tabs/TabBar";
@@ -302,6 +303,7 @@ function ToolDialogMount() {
   if (dialog === "ai") return <AiDialog open={true} onClose={close} />;
   if (dialog === "addText") return <AddTextDialog open={true} onClose={close} />;
   if (dialog === "password") return <PasswordDialog open={true} onClose={close} />;
+  if (dialog === "sanitize") return <SanitizeDialog open={true} onClose={close} />;
   return null;
 }
 

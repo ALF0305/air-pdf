@@ -774,3 +774,56 @@ export async function linearizePdf(
 ): Promise<void> {
   await invoke("pdf_linearize", { inputPath, outputPath });
 }
+
+// ============================================================
+// Sanitize PDF (Plan v0.4 - Stirling mapping #1)
+// ============================================================
+
+/**
+ * Opciones para sanitizar un PDF. Cada `true` significa "remover esta
+ * categoria del PDF". Defaults razonables si no se especifica:
+ * todo activo salvo metadata.
+ */
+export interface SanitizeOptions {
+  removeJavascript?: boolean;
+  removeEmbeddedFiles?: boolean;
+  removeOpenActions?: boolean;
+  removeXfa?: boolean;
+  removeMetadata?: boolean;
+}
+
+/**
+ * Reporte devuelto por `sanitizePdf` indicando que se removio realmente.
+ * Util para mostrar un resumen al usuario.
+ *
+ * Las claves vienen del backend Rust con snake_case via serde.
+ */
+export interface SanitizeReport {
+  javascript_removed: boolean;
+  embedded_files_removed: boolean;
+  open_action_removed: boolean;
+  catalog_aa_removed: boolean;
+  pages_actions_removed: number;
+  xfa_removed: boolean;
+  metadata_removed: boolean;
+}
+
+/**
+ * Sanitiza un PDF removiendo elementos peligrosos / intrusivos.
+ * Crea una copia limpia en `outputPath`; el archivo original no se modifica.
+ */
+export async function sanitizePdf(
+  inputPath: string,
+  outputPath: string,
+  options: SanitizeOptions = {}
+): Promise<SanitizeReport> {
+  return await invoke<SanitizeReport>("pdf_sanitize", {
+    inputPath,
+    outputPath,
+    removeJavascript: options.removeJavascript ?? null,
+    removeEmbeddedFiles: options.removeEmbeddedFiles ?? null,
+    removeOpenActions: options.removeOpenActions ?? null,
+    removeXfa: options.removeXfa ?? null,
+    removeMetadata: options.removeMetadata ?? null,
+  });
+}

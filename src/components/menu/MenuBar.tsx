@@ -301,6 +301,12 @@ export function MenuBar({ onOpen, onSearch }: Props) {
           >
             Seguridad / contraseña...
           </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setToolDialog("sanitize")}
+            disabled={!activeTabId}
+          >
+            Sanitizar PDF (quitar scripts y embebidos)...
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => handleRotateAll(90)}
