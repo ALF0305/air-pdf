@@ -10,11 +10,10 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, Clock, Trash2 } from "lucide-react";
 import {
   getRecentFiles,
-  openPdf,
-  addRecentFile,
   clearRecentFiles,
   type RecentFile,
 } from "@/lib/tauri";
+import { openPdfFlow } from "@/lib/openPdfFlow";
 import { usePdfStore } from "@/stores/pdfStore";
 
 export function RecentFilesMenu() {
@@ -34,13 +33,10 @@ export function RecentFilesMenu() {
   }, []);
 
   const handleClick = async (path: string) => {
-    try {
-      const doc = await openPdf(path);
+    const doc = await openPdfFlow(path);
+    if (doc) {
       addTab(doc);
-      await addRecentFile(path);
       await refresh();
-    } catch (e) {
-      alert(`No se pudo abrir: ${path}\n${e}`);
     }
   };
 

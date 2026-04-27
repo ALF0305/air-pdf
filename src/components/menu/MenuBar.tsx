@@ -295,6 +295,12 @@ export function MenuBar({ onOpen, onSearch }: Props) {
           >
             Extraer texto a archivo...
           </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setToolDialog("password")}
+            disabled={!activeTabId}
+          >
+            Seguridad / contraseña...
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => handleRotateAll(90)}

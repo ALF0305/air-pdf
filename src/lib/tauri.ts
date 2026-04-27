@@ -696,3 +696,81 @@ export async function stampText(
     onlyPage: onlyPage ?? null,
   });
 }
+
+// ============================================================
+// Security (Plan 2.0.A) - password protection y operaciones lossless
+// ============================================================
+
+/**
+ * Permisos asignables a un PDF cifrado. Se aplican solo cuando se abre
+ * con `userPassword`; el `ownerPassword` siempre tiene control total.
+ */
+export interface PdfPermissions {
+  allowPrint?: boolean;
+  allowExtract?: boolean;
+  allowModify?: boolean;
+  allowAnnotateAndForm?: boolean;
+  allowFormFilling?: boolean;
+  allowAssemble?: boolean;
+  allowAccessibility?: boolean;
+}
+
+/**
+ * Detecta si un PDF esta cifrado. No requiere password: si qpdf no
+ * puede abrirlo sin password, devuelve true.
+ */
+export async function isPdfEncrypted(inputPath: string): Promise<boolean> {
+  return await invoke<boolean>("pdf_is_encrypted", { inputPath });
+}
+
+/**
+ * Cifra un PDF con AES-256 (R6). Escribe el resultado en `outputPath`,
+ * sin modificar el archivo original.
+ *
+ * - `userPassword`: requerido para abrir el PDF.
+ * - `ownerPassword`: requerido para cambiar permisos / quitar el cifrado.
+ *   Si es vacio, qpdf lo trata igual que `userPassword`.
+ */
+export async function encryptPdf(
+  inputPath: string,
+  outputPath: string,
+  userPassword: string,
+  ownerPassword: string,
+  permissions: PdfPermissions = {}
+): Promise<void> {
+  await invoke("pdf_encrypt", {
+    inputPath,
+    outputPath,
+    userPassword,
+    ownerPassword,
+    allowPrint: permissions.allowPrint ?? true,
+    allowExtract: permissions.allowExtract ?? false,
+    allowModify: permissions.allowModify ?? false,
+    allowAnnotateAndForm: permissions.allowAnnotateAndForm ?? false,
+    allowFormFilling: permissions.allowFormFilling ?? false,
+    allowAssemble: permissions.allowAssemble ?? false,
+    allowAccessibility: permissions.allowAccessibility ?? true,
+  });
+}
+
+/**
+ * Quita el cifrado de un PDF protegido. Requiere conocer la contrasena
+ * (preferentemente la de owner; user tambien funciona si tiene permisos).
+ */
+export async function decryptPdf(
+  inputPath: string,
+  outputPath: string,
+  password: string
+): Promise<void> {
+  await invoke("pdf_decrypt", { inputPath, outputPath, password });
+}
+
+/**
+ * Linealiza un PDF para "fast web view".
+ */
+export async function linearizePdf(
+  inputPath: string,
+  outputPath: string
+): Promise<void> {
+  await invoke("pdf_linearize", { inputPath, outputPath });
+}

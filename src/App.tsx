@@ -27,6 +27,7 @@ import { FormFieldsDialog } from "@/components/dialogs/FormFieldsDialog";
 import { OcrDialog } from "@/components/dialogs/OcrDialog";
 import { AiDialog } from "@/components/dialogs/AiDialog";
 import { AddTextDialog } from "@/components/dialogs/AddTextDialog";
+import { PasswordDialog } from "@/components/dialogs/PasswordDialog";
 import { MenuBar } from "@/components/menu/MenuBar";
 import { StatusBar } from "@/components/statusbar/StatusBar";
 import { TabBar } from "@/components/tabs/TabBar";
@@ -36,7 +37,8 @@ import { usePdfStore } from "@/stores/pdfStore";
 import { useUiStore } from "@/stores/uiStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useAnnotationStore } from "@/stores/annotationStore";
-import { openPdf, addRecentFile, printPdf } from "@/lib/tauri";
+import { printPdf } from "@/lib/tauri";
+import { openPdfFlow } from "@/lib/openPdfFlow";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { useDragDrop } from "@/hooks/useDragDrop";
@@ -91,13 +93,8 @@ function App() {
       filters: [{ name: "PDF", extensions: ["pdf"] }],
     });
     if (typeof selected === "string") {
-      try {
-        const doc = await openPdf(selected);
-        addTab(doc);
-        await addRecentFile(selected);
-      } catch (e) {
-        alert(`Error abriendo PDF: ${e}`);
-      }
+      const doc = await openPdfFlow(selected);
+      if (doc) addTab(doc);
     }
   };
 
@@ -208,9 +205,8 @@ function App() {
   useDragDrop(async (paths) => {
     for (const path of paths) {
       try {
-        const doc = await openPdf(path);
-        addTab(doc);
-        await addRecentFile(path);
+        const doc = await openPdfFlow(path);
+        if (doc) addTab(doc);
       } catch (e) {
         console.error("Cannot open dropped file", path, e);
       }
@@ -305,6 +301,7 @@ function ToolDialogMount() {
   if (dialog === "ocr") return <OcrDialog open={true} onClose={close} />;
   if (dialog === "ai") return <AiDialog open={true} onClose={close} />;
   if (dialog === "addText") return <AddTextDialog open={true} onClose={close} />;
+  if (dialog === "password") return <PasswordDialog open={true} onClose={close} />;
   return null;
 }
 
