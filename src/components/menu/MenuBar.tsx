@@ -307,6 +307,12 @@ export function MenuBar({ onOpen, onSearch }: Props) {
           >
             Sanitizar PDF (quitar scripts y embebidos)...
           </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setToolDialog("autoRedact")}
+            disabled={!activeTabId}
+          >
+            Anonimizar (auto-redact DNI, teléfono, email)...
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => handleRotateAll(90)}

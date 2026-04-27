@@ -6,3 +6,4 @@ pub mod extractor;
 pub mod transform;
 pub mod security;
 pub mod sanitize;
+pub mod auto_redact;

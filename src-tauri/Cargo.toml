@@ -43,3 +43,7 @@ tauri-plugin-process = "2"
 # instalado en el sistema. Primer build sera lento (libqpdf + bindgen).
 qpdf = { version = "0.3", features = ["vendored"] }
 
+# Auto-redact regex (Stirling mapping #2). regex ya entra como transitiva
+# por bindgen; declararla explicita es para usarla directamente.
+regex = "1"
+

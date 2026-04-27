@@ -827,3 +827,62 @@ export async function sanitizePdf(
     removeMetadata: options.removeMetadata ?? null,
   });
 }
+
+// ============================================================
+// Auto-redact via regex (Stirling mapping #2)
+// ============================================================
+
+export interface AutoRedactOptions {
+  useDni?: boolean;
+  useTelefono?: boolean;
+  useEmail?: boolean;
+  /** Lista de [label, regex] adicionales aportados por el usuario. */
+  customPatterns?: Array<[string, string]>;
+}
+
+export interface PatternHits {
+  label: string;
+  matches: number;
+  pages_with_hits: number[];
+}
+
+export interface AutoRedactReport {
+  total_redactions: number;
+  per_pattern: PatternHits[];
+}
+
+/**
+ * Aplica redacciones automaticas en `outputPath` segun patrones regex
+ * (presets DNI/telefono/email + custom). El original no se modifica.
+ */
+export async function autoRedactPdf(
+  inputPath: string,
+  outputPath: string,
+  options: AutoRedactOptions = {}
+): Promise<AutoRedactReport> {
+  return await invoke<AutoRedactReport>("pdf_auto_redact", {
+    inputPath,
+    outputPath,
+    useDni: options.useDni ?? false,
+    useTelefono: options.useTelefono ?? false,
+    useEmail: options.useEmail ?? false,
+    customPatterns: options.customPatterns ?? [],
+  });
+}
+
+/**
+ * Solo escanea: devuelve cuantos matches habria por patron sin modificar
+ * ni guardar nada. Util como preview "esto vas a tachar".
+ */
+export async function autoRedactPdfPreview(
+  inputPath: string,
+  options: AutoRedactOptions = {}
+): Promise<AutoRedactReport> {
+  return await invoke<AutoRedactReport>("pdf_auto_redact_preview", {
+    inputPath,
+    useDni: options.useDni ?? false,
+    useTelefono: options.useTelefono ?? false,
+    useEmail: options.useEmail ?? false,
+    customPatterns: options.customPatterns ?? [],
+  });
+}

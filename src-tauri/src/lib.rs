@@ -87,6 +87,8 @@ pub fn run() {
             commands::security::pdf_decrypt,
             commands::security::pdf_linearize,
             commands::sanitize::pdf_sanitize,
+            commands::auto_redact::pdf_auto_redact,
+            commands::auto_redact::pdf_auto_redact_preview,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

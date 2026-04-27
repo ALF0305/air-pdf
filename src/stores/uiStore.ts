@@ -46,7 +46,8 @@ export type ToolDialog =
   | "ocr"
   | "ai"
   | "addText"
-  | "sanitize";
+  | "sanitize"
+  | "autoRedact";
 
 interface UiStore {
   readingMode: boolean;
