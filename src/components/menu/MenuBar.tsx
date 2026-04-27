@@ -14,6 +14,7 @@ import {
   embedAnnotationsIntoPdf,
   extractTextToFile,
   getPagesInfo,
+  linearizePdf,
   loadAnnotations,
   printPdf,
   redactPdf,
@@ -184,6 +185,24 @@ export function MenuBar({ onOpen, onSearch }: Props) {
     }
   };
 
+  const handleLinearize = async () => {
+    const tab = getActiveTab();
+    if (!tab) return;
+    const out = await saveDialog({
+      defaultPath: tab.path.replace(/\.pdf$/i, "-linearizado.pdf"),
+      filters: [{ name: "PDF", extensions: ["pdf"] }],
+    });
+    if (!out) return;
+    try {
+      await linearizePdf(tab.path, out);
+      alert(
+        `PDF linearizado guardado en:\n${out}\n\nLos visores pueden mostrar la primera página antes de descargar el archivo completo.`
+      );
+    } catch (e) {
+      alert(`Error: ${e}`);
+    }
+  };
+
   const handleSaveAs = async () => {
     const tab = getActiveTab();
     if (!tab) return;
@@ -276,6 +295,12 @@ export function MenuBar({ onOpen, onSearch }: Props) {
             disabled={!activeTabId}
           >
             Comprimir PDF...
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={handleLinearize}
+            disabled={!activeTabId}
+          >
+            Linealizar (fast web view)...
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => setToolDialog("metadata")}
