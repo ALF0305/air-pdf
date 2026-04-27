@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,12 +18,38 @@ interface Props {
   onClose: () => void;
 }
 
+const PREVIEW_DEBOUNCE_MS = 80;
+
 export function PageNumbersDialog({ open, onClose }: Props) {
   const tab = usePdfStore((s) => s.getActiveTab());
   const bumpRefresh = useUiStore((s) => s.bumpRefresh);
+  const setPageNumberPreview = useUiStore((s) => s.setPageNumberPreview);
   const [format, setFormat] = useState("{n} / {total}");
   const [fontSize, setFontSize] = useState(11);
   const [busy, setBusy] = useState(false);
+
+  // Sync de preview con debounce
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      if (format) {
+        setPageNumberPreview({ format, fontSize });
+      } else {
+        setPageNumberPreview(null);
+      }
+    }, PREVIEW_DEBOUNCE_MS);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [format, fontSize, setPageNumberPreview]);
+
+  // Limpieza al desmontar
+  useEffect(() => {
+    return () => {
+      setPageNumberPreview(null);
+    };
+  }, [setPageNumberPreview]);
 
   if (!tab) return null;
 
@@ -35,6 +61,7 @@ export function PageNumbersDialog({ open, onClose }: Props) {
       await savePdfBackup(tab.path, tab.path + ".bak");
       await pageNumbersPdf(tab.path, tab.path, format, fontSize);
       bumpRefresh();
+      setPageNumberPreview(null);
       onClose();
     } catch (e) {
       alert(`Error: ${e}`);
@@ -43,8 +70,13 @@ export function PageNumbersDialog({ open, onClose }: Props) {
     }
   };
 
+  const handleCancel = () => {
+    setPageNumberPreview(null);
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <Dialog open={open} onOpenChange={(v) => !v && handleCancel()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Números de página</DialogTitle>
@@ -74,11 +106,12 @@ export function PageNumbersDialog({ open, onClose }: Props) {
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            Se estampan en el centro-inferior de cada página.
+            Se estampan en el centro-inferior de cada página. La vista previa
+            sobre el visor es aproximada.
           </p>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={busy}>
+          <Button variant="outline" onClick={handleCancel} disabled={busy}>
             Cancelar
           </Button>
           <Button onClick={handleApply} disabled={busy}>

@@ -1,5 +1,29 @@
 import { create } from "zustand";
 
+/**
+ * Preview en vivo de marca de agua. Se renderiza como overlay HTML sobre
+ * cada pagina del visor mientras `WatermarkDialog` esta abierto. El render
+ * verdadero al PDF lo hace el backend (PDFium/lopdf) al hacer "Aplicar".
+ */
+export interface WatermarkPreview {
+  text: string;
+  /** tamano de fuente en puntos PDF */
+  fontSize: number;
+  /** 0..1 */
+  opacity: number;
+}
+
+/**
+ * Preview en vivo de numeros de pagina. El backend los estampa en
+ * centro-inferior, asi que el preview replica esa posicion fija.
+ */
+export interface PageNumberPreview {
+  /** formato con tokens {n} y {total} */
+  format: string;
+  /** tamano de fuente en puntos PDF */
+  fontSize: number;
+}
+
 export type ToolDialog =
   | null
   | "metadata"
@@ -33,6 +57,8 @@ interface UiStore {
   refreshKey: number;
   darkMode: boolean;
   presentationMode: boolean;
+  watermarkPreview: WatermarkPreview | null;
+  pageNumberPreview: PageNumberPreview | null;
   setReadingMode: (v: boolean) => void;
   toggleReadingMode: () => void;
   setSidebarVisible: (v: boolean) => void;
@@ -44,11 +70,22 @@ interface UiStore {
   bumpRefresh: () => void;
   toggleDarkMode: () => void;
   togglePresentation: () => void;
+  setWatermarkPreview: (v: WatermarkPreview | null) => void;
+  setPageNumberPreview: (v: PageNumberPreview | null) => void;
+  clearAllPreviews: () => void;
 }
 
-const storedDark =
-  typeof window !== "undefined" &&
-  window.localStorage?.getItem("airpdf-dark") === "1";
+// Defensivo: en algunos entornos de test (jsdom con flags raros) el acceso
+// a localStorage puede lanzar. No queremos que el store entero falle por
+// la persistencia del modo oscuro.
+let storedDark = false;
+try {
+  if (typeof window !== "undefined") {
+    storedDark = window.localStorage?.getItem("airpdf-dark") === "1";
+  }
+} catch {
+  /* noop */
+}
 
 export const useUiStore = create<UiStore>((set) => ({
   readingMode: false,
@@ -60,6 +97,8 @@ export const useUiStore = create<UiStore>((set) => ({
   refreshKey: 0,
   darkMode: storedDark,
   presentationMode: false,
+  watermarkPreview: null,
+  pageNumberPreview: null,
   setReadingMode: (v) => set({ readingMode: v }),
   toggleReadingMode: () => set((s) => ({ readingMode: !s.readingMode })),
   setSidebarVisible: (v) => set({ sidebarVisible: v }),
@@ -84,4 +123,8 @@ export const useUiStore = create<UiStore>((set) => ({
       presentationMode: !s.presentationMode,
       readingMode: !s.presentationMode ? true : s.readingMode,
     })),
+  setWatermarkPreview: (v) => set({ watermarkPreview: v }),
+  setPageNumberPreview: (v) => set({ pageNumberPreview: v }),
+  clearAllPreviews: () =>
+    set({ watermarkPreview: null, pageNumberPreview: null }),
 }));

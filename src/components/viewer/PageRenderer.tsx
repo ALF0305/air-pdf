@@ -3,7 +3,9 @@ import { renderPage } from "@/lib/tauri";
 import { AnnotationLayer } from "@/components/annotations/AnnotationLayer";
 import { StampPicker, type Stamp } from "@/components/annotations/StampPicker";
 import { FreeTextEditor } from "@/components/annotations/FreeTextEditor";
+import { PageOverlay } from "@/components/viewer/PageOverlay";
 import { useAnnotationStore } from "@/stores/annotationStore";
+import { usePdfStore } from "@/stores/pdfStore";
 import { useUiStore } from "@/stores/uiStore";
 import type { FreetextData } from "@/types/annotations";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
@@ -47,6 +49,7 @@ export function PageRenderer({
   const tool = useAnnotationStore((s) => s.activeTool);
   const add = useAnnotationStore((s) => s.add);
   const refreshKey = useUiStore((s) => s.refreshKey);
+  const totalPages = usePdfStore((s) => s.getActiveTab()?.pageCount ?? 1);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Lazy-load: only render when near viewport
@@ -239,6 +242,11 @@ export function PageRenderer({
         pageIndex={pageIndex}
         width={width}
         height={height}
+        scale={scale}
+      />
+      <PageOverlay
+        pageIndex={pageIndex}
+        totalPages={totalPages}
         scale={scale}
       />
       <StampPicker
