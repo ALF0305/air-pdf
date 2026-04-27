@@ -139,13 +139,14 @@ clasificadas en:
 
 Sin tocar codigo. Solo benchmarking de scope.
 
-## Orden de ejecucion (decidido 2026-04-26 por Alfredo: firma al final)
+## Orden de ejecucion (decidido 2026-04-26 por Alfredo)
 
-1. **2.0.E** mapping Stirling (1 dia, sin riesgo, da claridad de scope)
-2. **2.0.A** password con qpdf-rs (alto valor, complejidad media)
-3. **2.0.C** spike EmbedPDF (rama separada, no bloquea main)
-4. **2.0.D** live preview watermark (UI puro, sin nuevas deps)
-5. **2.0.B** firma PKCS#7 (al final, mayor riesgo + decision RENIEC pendiente)
+1. **2.0.E** mapping Stirling — COMPLETO
+2. **2.0.A** password con qpdf-rs — BACKEND COMPLETO (UI pendiente)
+3. **2.0.D** live preview watermark — UI puro, sin nuevas deps
+4. **2.0.C** spike EmbedPDF — requiere medicion presencial
+5. **2.0.B** firma — **DIFERIDO a v0.5+ esperando RENIEC**
+   (ver `docs/decisions/0002-firma-digital-camino-reniec.md`)
 
 ## Riesgos transversales
 

@@ -5,7 +5,23 @@
 **Status:** Bloqueado por decision de Alfredo. Ejecutar AL FINAL del v0.4
 (despues de A, C, D segun orden acordado).
 
-## Decision pendiente
+## Decision tomada (2026-04-26)
+
+**Camino 2: esperar RENIEC.** Alfredo elige hacer firma generica + RENIEC
+juntos para tener validez legal completa en Peru desde el dia uno del
+release. Implica:
+
+- Tramite RENIEC bloqueante (ver `docs/decisions/firma-digital-reniec-tramite.md`)
+- Sub-plan B difiere a v0.5+ hasta tener cert RENIEC operativo
+- v0.4 NO incluye firma digital
+- Ver ADR `docs/decisions/0002-firma-digital-camino-reniec.md`
+
+El plan de implementacion abajo (B1-B7) sigue vigente para cuando se
+desbloquee el tramite. Camino 1 ya NO se considera.
+
+---
+
+## Decision pendiente (historico, ya resuelto)
 
 Antes de cualquier codigo, Alfredo debe elegir UNO de estos caminos:
 
