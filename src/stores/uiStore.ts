@@ -48,7 +48,8 @@ export type ToolDialog =
   | "addText"
   | "sanitize"
   | "autoRedact"
-  | "blankPages";
+  | "blankPages"
+  | "print";
 
 interface UiStore {
   readingMode: boolean;

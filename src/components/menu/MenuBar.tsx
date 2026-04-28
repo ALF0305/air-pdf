@@ -16,7 +16,6 @@ import {
   getPagesInfo,
   linearizePdf,
   loadAnnotations,
-  printPdf,
   redactPdf,
   rotateDocument,
   savePdfBackup,
@@ -219,14 +218,10 @@ export function MenuBar({ onOpen, onSearch }: Props) {
     }
   };
 
-  const handlePrint = async () => {
+  const handlePrint = () => {
     const tab = getActiveTab();
     if (!tab) return;
-    try {
-      await printPdf(tab.path);
-    } catch (e) {
-      alert(`Error al imprimir: ${e}`);
-    }
+    setToolDialog("print");
   };
 
   const handleRotateAll = async (degrees: number) => {

@@ -38,6 +38,8 @@ pub fn run() {
             commands::pdf::pdf_get_pages_info,
             commands::pdf::pdf_save_backup,
             commands::pdf::pdf_print,
+            commands::pdf::list_system_printers,
+            commands::pdf::pdf_print_to,
             commands::search::pdf_search,
             commands::settings::settings_load,
             commands::settings::settings_save,

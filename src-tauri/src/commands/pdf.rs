@@ -63,15 +63,15 @@ pub async fn pdf_save_backup(path: String, backup_path: String) -> Result<(), St
 }
 
 /// Launch Windows "print" verb via ShellExecute on the given PDF.
-/// This opens the system's default PDF printing flow (usually the printer picker).
+/// Si el visor predeterminado de PDFs no muestra dialog de impresoras
+/// reales (caso comun con Edge configurado para "Microsoft Print to PDF"),
+/// usa pdf_print_to despues de elegir una impresora con list_system_printers.
 #[tauri::command]
 pub async fn pdf_print(path: String) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
         use std::process::Command;
-        // Use PowerShell's Start-Process -Verb Print for reliable printer dialog.
-        // CREATE_NO_WINDOW = 0x08000000
         let ps = format!(
             "Start-Process -FilePath '{}' -Verb Print",
             path.replace('\'', "''")
@@ -87,5 +87,84 @@ pub async fn pdf_print(path: String) -> Result<(), String> {
     {
         let _ = path;
         Err("Print only supported on Windows".to_string())
+    }
+}
+
+/// Lista las impresoras instaladas en el sistema (Windows).
+#[tauri::command]
+pub async fn list_system_printers() -> Result<Vec<String>, String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        use std::process::Command;
+        let output = Command::new("powershell")
+            .creation_flags(0x0800_0000)
+            .args([
+                "-NoProfile",
+                "-Command",
+                "Get-Printer | Select-Object -ExpandProperty Name",
+            ])
+            .output()
+            .map_err(|e| format!("No se pudo listar impresoras: {}", e))?;
+
+        if !output.status.success() {
+            // Fallback con WMI para sistemas viejos
+            let alt = Command::new("powershell")
+                .creation_flags(0x0800_0000)
+                .args([
+                    "-NoProfile",
+                    "-Command",
+                    "Get-WmiObject -Class Win32_Printer | Select-Object -ExpandProperty Name",
+                ])
+                .output()
+                .map_err(|e| format!("No se pudo listar impresoras (WMI): {}", e))?;
+            if !alt.status.success() {
+                return Err(String::from_utf8_lossy(&alt.stderr).to_string());
+            }
+            return Ok(parse_printer_lines(&alt.stdout));
+        }
+
+        Ok(parse_printer_lines(&output.stdout))
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Listar impresoras solo soportado en Windows".to_string())
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn parse_printer_lines(stdout: &[u8]) -> Vec<String> {
+    String::from_utf8_lossy(stdout)
+        .lines()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+/// Imprime un PDF a una impresora especifica usando Start-Process -Verb PrintTo.
+/// El visor predeterminado abre brevemente y envia el archivo a la impresora,
+/// luego se cierra. NO muestra dialog: la impresora ya fue elegida.
+#[tauri::command]
+pub async fn pdf_print_to(path: String, printer_name: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        use std::process::Command;
+        let ps = format!(
+            "Start-Process -FilePath '{}' -Verb PrintTo -ArgumentList '\"{}\"'",
+            path.replace('\'', "''"),
+            printer_name.replace('\'', "''").replace('"', "")
+        );
+        Command::new("powershell")
+            .creation_flags(0x0800_0000)
+            .args(["-NoProfile", "-WindowStyle", "Hidden", "-Command", &ps])
+            .spawn()
+            .map_err(|e| format!("PrintTo failed: {}", e))?;
+        return Ok(());
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = (path, printer_name);
+        Err("PrintTo solo soportado en Windows".to_string())
     }
 }

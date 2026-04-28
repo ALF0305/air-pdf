@@ -31,6 +31,7 @@ import { PasswordDialog } from "@/components/dialogs/PasswordDialog";
 import { SanitizeDialog } from "@/components/dialogs/SanitizeDialog";
 import { AutoRedactDialog } from "@/components/dialogs/AutoRedactDialog";
 import { BlankPagesDialog } from "@/components/dialogs/BlankPagesDialog";
+import { PrintDialog } from "@/components/dialogs/PrintDialog";
 import { MenuBar } from "@/components/menu/MenuBar";
 import { StatusBar } from "@/components/statusbar/StatusBar";
 import { TabBar } from "@/components/tabs/TabBar";
@@ -40,7 +41,6 @@ import { usePdfStore } from "@/stores/pdfStore";
 import { useUiStore } from "@/stores/uiStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useAnnotationStore } from "@/stores/annotationStore";
-import { printPdf } from "@/lib/tauri";
 import { openPdfFlow } from "@/lib/openPdfFlow";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useShortcuts } from "@/hooks/useShortcuts";
@@ -133,7 +133,7 @@ function App() {
       ctrl: true,
       handler: () => {
         const tab = usePdfStore.getState().getActiveTab();
-        if (tab) printPdf(tab.path).catch((e) => alert(`Error: ${e}`));
+        if (tab) setToolDialog("print");
       },
     },
     {
@@ -308,6 +308,7 @@ function ToolDialogMount() {
   if (dialog === "sanitize") return <SanitizeDialog open={true} onClose={close} />;
   if (dialog === "autoRedact") return <AutoRedactDialog open={true} onClose={close} />;
   if (dialog === "blankPages") return <BlankPagesDialog open={true} onClose={close} />;
+  if (dialog === "print") return <PrintDialog open={true} onClose={close} />;
   return null;
 }
 

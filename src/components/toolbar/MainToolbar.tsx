@@ -18,7 +18,6 @@ import {
   insertBlankPage,
   savePdfBackup,
   saveVersion,
-  printPdf,
 } from "@/lib/tauri";
 import { save } from "@tauri-apps/plugin-dialog";
 
@@ -176,14 +175,7 @@ export function MainToolbar() {
       <Button
         variant="ghost"
         size="icon"
-        onClick={async () => {
-          if (!activeTab) return;
-          try {
-            await printPdf(activeTab.path);
-          } catch (e) {
-            alert(`Error al imprimir: ${e}`);
-          }
-        }}
+        onClick={() => useUiStore.getState().setToolDialog("print")}
         title="Imprimir... (Ctrl+P)"
       >
         <Printer className="h-4 w-4" />

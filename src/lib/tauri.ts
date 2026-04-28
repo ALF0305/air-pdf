@@ -397,6 +397,26 @@ export async function printPdf(path: string): Promise<void> {
   await invoke("pdf_print", { path });
 }
 
+/**
+ * Lista las impresoras instaladas en el sistema (Windows).
+ * Devuelve nombres tal como aparecen en Windows. Util para mostrar un
+ * dropdown al usuario antes de imprimir.
+ */
+export async function listSystemPrinters(): Promise<string[]> {
+  return await invoke<string[]>("list_system_printers");
+}
+
+/**
+ * Imprime el PDF a una impresora especifica sin pasar por el dialog
+ * del visor predeterminado. La impresora ya fue elegida.
+ */
+export async function printPdfTo(
+  path: string,
+  printerName: string
+): Promise<void> {
+  await invoke("pdf_print_to", { path, printerName });
+}
+
 export async function embedAnnotationsIntoPdf(
   pdfPath: string,
   outputPath: string
