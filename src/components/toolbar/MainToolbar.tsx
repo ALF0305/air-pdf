@@ -6,6 +6,7 @@ import {
   Trash2,
   Copy,
   FilePlus,
+  Printer,
 } from "lucide-react";
 import { usePdfStore } from "@/stores/pdfStore";
 import { useUiStore } from "@/stores/uiStore";
@@ -17,6 +18,7 @@ import {
   insertBlankPage,
   savePdfBackup,
   saveVersion,
+  printPdf,
 } from "@/lib/tauri";
 import { save } from "@tauri-apps/plugin-dialog";
 
@@ -169,6 +171,22 @@ export function MainToolbar() {
         className="text-destructive"
       >
         <Trash2 className="h-4 w-4" />
+      </Button>
+      <div className="w-px h-6 bg-border mx-1" />
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={async () => {
+          if (!activeTab) return;
+          try {
+            await printPdf(activeTab.path);
+          } catch (e) {
+            alert(`Error al imprimir: ${e}`);
+          }
+        }}
+        title="Imprimir... (Ctrl+P)"
+      >
+        <Printer className="h-4 w-4" />
       </Button>
     </div>
   );
