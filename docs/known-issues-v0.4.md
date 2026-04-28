@@ -219,13 +219,37 @@ Orden por valor / esfuerzo:
 5. **#1** fuente FreeText (parcialmente, ver #9) — commit `7aef507`
 6. **#7** dialog impresoras (ruta C) — commit `22d461d`
 
-### Issues #8-#10 (NUEVOS en testing 2026-04-28 noche):
+### Issues #8-#10 (RESUELTOS en sesion 2026-04-29 manana):
 
-7. **#8** FreeText: Escape no guarda, UX confuso — pendiente
-8. **#9** Fuente detectada no coincide con documento + falta inspector — pendiente
-9. **#10** File association: doble-click en PDF abre AirPDF pero no carga el archivo — pendiente
+7. **#8** FreeText UX Word-like (Enter guarda, click fuera guarda, Esc con confirmacion, boton "Guardar" prominente) — commit `b25e5ec`
+8. **#9** Inspector "Ver fuentes del documento" en menu Archivo + comando list_fonts_in_page — commit `b25e5ec`
+9. **#10** File association: tauri-plugin-single-instance + setup hook que emite "open-pdf-from-cli" + listener en App.tsx — commit `b25e5ec`
 
-Estimacion proxima sesion: 2-3 horas para #8 + #9 + #10.
+Bump version 0.3.1 -> 0.3.2.
+
+### Issues #11-#14 (NUEVOS reportados en testing 2026-04-29 manana, post-fix #8/#9/#10):
+
+10. **#11** Grosor de trazo "sigue igual" — investigar si el usuario probo
+    con v0.3.1 antiguo (no tenia el fix) o si hay un bug real. Pedir
+    sintoma exacto despues de instalar v0.3.2.
+11. **#12** Cabecera (header con titulo AirPDF) muy pequena. Debe ser
+    similar a Acrobat: mas alta, con espacio para herramientas grandes
+    accesibles desde la barra superior.
+12. **#13** Paneles laterales (sidebar de thumbnails, bookmarks, etc.)
+    muy estrechos. Acrobat tiene sidebars mas anchos y con mejor
+    jerarquia visual. Mejorar tipografia, espaciado, iconos.
+13. **#14** Icono actual no le gusta. Restaurar al icono original
+    (naranja, estilo "C" o circulo con punto) que tenia en una version
+    anterior. Verificar en git history que icono usaba antes.
+
+Severidad estimada de #11: por confirmar (puede ser usuario instalo
+viejo o bug real).
+Severidad de #12 #13: UX (no bloqueante, pero importante para que se
+sienta como Acrobat).
+Severidad de #14: cosmetico.
+
+Estimacion proxima sesion: 4-6 horas (rediseno UI #12 #13 + restore
+icono #14 + investigacion #11).
 
 ## Origen
 
