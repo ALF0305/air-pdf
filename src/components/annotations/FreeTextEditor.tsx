@@ -137,13 +137,48 @@ export function FreeTextEditor({
     });
   };
 
+  const handleEscape = () => {
+    // Si hay texto escrito, pedir confirmacion antes de descartar.
+    if (text.trim() && !window.confirm("Descartar el texto sin guardar?")) {
+      return;
+    }
+    onCancel();
+  };
+
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
       e.preventDefault();
-      onCancel();
-    } else if (e.key === "Enter" && !e.shiftKey && e.ctrlKey) {
+      handleEscape();
+    } else if (e.key === "Enter" && e.ctrlKey) {
+      // Ctrl+Enter o Enter (sin Ctrl) ambos guardan, para usuarios que
+      // esperan comportamiento Word-like. Enter solo (sin Ctrl) tambien
+      // se permite para compatibilidad. Shift+Enter = salto de linea.
       e.preventDefault();
       commit();
+    } else if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      commit();
+    }
+    // Shift+Enter sigue su flujo normal (nueva linea en textarea)
+  };
+
+  /**
+   * onBlur del wrapper: si el focus se va a un elemento FUERA del editor
+   * (no a la toolbar interna), guardamos automaticamente. Comportamiento
+   * tipo Word: "click fuera = guardar".
+   */
+  const handleWrapperBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    const next = e.relatedTarget as Node | null;
+    if (next && e.currentTarget.contains(next)) {
+      // El focus va a otro elemento DENTRO del editor (ej. boton bold).
+      // No hacer nada.
+      return;
+    }
+    // Click fuera: si hay texto, guardar; si no, cancelar.
+    if (text.trim()) {
+      commit();
+    } else {
+      onCancel();
     }
   };
 
@@ -155,7 +190,17 @@ export function FreeTextEditor({
       className="absolute z-50"
       style={{ left: positionPx.left, top: positionPx.top }}
       onClick={(e) => e.stopPropagation()}
+      onBlur={handleWrapperBlur}
+      tabIndex={-1}
     >
+      {/* Hint para el usuario: como guardar */}
+      <div
+        className={`absolute ${toolbarAbove ? "-top-20" : "top-full mt-12"} left-0 text-[10px] text-muted-foreground bg-background/90 border rounded px-1.5 py-0.5 pointer-events-none`}
+        style={{ whiteSpace: "nowrap" }}
+      >
+        Enter o click fuera = Guardar · Shift+Enter = nueva linea · Esc = descartar
+      </div>
+
       {/* Floating format toolbar */}
       <div
         className={`absolute ${toolbarAbove ? "-top-12" : "top-full mt-1"} left-0 flex items-center gap-1 bg-popover border rounded-md shadow-lg px-1.5 py-1 text-sm`}
@@ -226,19 +271,19 @@ export function FreeTextEditor({
         />
         <div className="w-px h-5 bg-border mx-1" />
         <Button
-          size="icon"
-          variant="ghost"
+          variant="default"
           onClick={commit}
-          title="Aplicar (Ctrl+Enter)"
-          className="h-7 w-7 text-green-600"
+          title="Guardar (Enter o click fuera del editor)"
+          className="h-7 px-3 bg-green-600 hover:bg-green-700 text-white font-medium"
         >
-          <Check className="h-3 w-3" />
+          <Check className="h-3 w-3 mr-1" />
+          Guardar
         </Button>
         <Button
           size="icon"
           variant="ghost"
-          onClick={onCancel}
-          title="Cancelar (Esc)"
+          onClick={handleEscape}
+          title="Descartar (Esc)"
           className="h-7 w-7 text-destructive"
         >
           <X className="h-3 w-3" />

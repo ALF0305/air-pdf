@@ -1,6 +1,6 @@
 [package]
 name = "air-pdf"
-version = "0.3.1"
+version = "0.3.2"
 description = "Editor de PDFs standalone con IA opcional"
 authors = ["Alfredo Pachas"]
 edition = "2021"
@@ -37,6 +37,7 @@ lopdf = "0.34"
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+tauri-plugin-single-instance = "2"
 
 # Spike v0.4 - password protection y operaciones lossless (Plan 2.0.A)
 # Feature `vendored` compila libqpdf desde fuente para no requerir el .dll

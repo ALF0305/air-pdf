@@ -114,6 +114,80 @@ pub fn detect_dominant_font(path: &Path, page_index: u16) -> Result<Option<Domin
     }))
 }
 
+/// Lista TODAS las fuentes encontradas en una pagina con su tamano y
+/// frecuencia (cuantos chars usan cada combinacion). Util para que el
+/// usuario inspeccione visualmente que fuentes tiene el PDF.
+///
+/// Devuelve la lista ordenada por frecuencia descendente. Cada entrada
+/// incluye tanto el nombre RAW (como lo reporta PDFium) como el
+/// nombre NORMALIZADO (la familia mapeada al editor).
+#[derive(Debug, Clone, Serialize)]
+pub struct FontUsage {
+    /// Nombre tal cual reporta PDFium (puede tener prefijo subset).
+    pub raw_name: String,
+    /// Familia normalizada (Arial, Times New Roman, etc.).
+    pub family: String,
+    pub size: f32,
+    pub bold: bool,
+    pub italic: bool,
+    /// Cuantos caracteres no-whitespace usan esta combinacion.
+    pub char_count: usize,
+}
+
+pub fn list_fonts_in_page(path: &Path, page_index: u16) -> Result<Vec<FontUsage>> {
+    let pdfium = pdfium()?;
+    let document = pdfium
+        .load_pdf_from_file(path, None)
+        .map_err(|e| AppError::Pdf(e.to_string()))?;
+
+    let pages = document.pages();
+    if (page_index as i32) >= pages.len() {
+        return Ok(Vec::new());
+    }
+    let page = pages
+        .get(page_index as i32)
+        .map_err(|e| AppError::Pdf(e.to_string()))?;
+    let text_page = match page.text() {
+        Ok(t) => t,
+        Err(_) => return Ok(Vec::new()),
+    };
+
+    use std::collections::HashMap;
+    // (raw, family, size, bold, italic) -> count
+    let mut counts: HashMap<(String, String, u32, bool, bool), usize> = HashMap::new();
+
+    for ch in text_page.chars().iter() {
+        if ch.unicode_char().map(|c| c.is_whitespace()).unwrap_or(true) {
+            continue;
+        }
+        let raw = ch.font_name();
+        if raw.is_empty() {
+            continue;
+        }
+        let (family, bold, italic) = normalize_font_name(&raw);
+        let size = ch.unscaled_font_size().value;
+        if size <= 0.0 {
+            continue;
+        }
+        let key = (raw, family, size.round() as u32, bold, italic);
+        *counts.entry(key).or_insert(0) += 1;
+    }
+
+    let mut result: Vec<FontUsage> = counts
+        .into_iter()
+        .map(|((raw, family, size, bold, italic), count)| FontUsage {
+            raw_name: raw,
+            family,
+            size: size as f32,
+            bold,
+            italic,
+            char_count: count,
+        })
+        .collect();
+    result.sort_by(|a, b| b.char_count.cmp(&a.char_count));
+    Ok(result)
+}
+
 /// Mapea un nombre de fuente PDF (con prefijo subset y sufijos de
 /// variante) a una familia conocida + flags bold/italic.
 fn normalize_font_name(raw: &str) -> (String, bool, bool) {

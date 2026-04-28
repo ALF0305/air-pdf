@@ -86,6 +86,30 @@ export async function detectDominantFont(
   });
 }
 
+export interface FontUsage {
+  raw_name: string;
+  family: string;
+  size: number;
+  bold: boolean;
+  italic: boolean;
+  char_count: number;
+}
+
+/**
+ * Lista TODAS las fuentes presentes en una pagina con frecuencia.
+ * Usado por el inspector "Ver fuentes del documento" para que el usuario
+ * verifique que el normalize_font_name esta mapeando correctamente.
+ */
+export async function listFontsInPage(
+  path: string,
+  pageIndex: number
+): Promise<FontUsage[]> {
+  return await invoke<FontUsage[]>("pdf_list_fonts_in_page", {
+    path,
+    pageIndex,
+  });
+}
+
 export async function extractPageText(
   path: string,
   pageIndex: number

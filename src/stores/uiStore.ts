@@ -49,7 +49,8 @@ export type ToolDialog =
   | "sanitize"
   | "autoRedact"
   | "blankPages"
-  | "print";
+  | "print"
+  | "fontInspector";
 
 interface UiStore {
   readingMode: boolean;

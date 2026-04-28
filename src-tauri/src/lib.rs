@@ -14,6 +14,20 @@ pub fn add(a: i32, b: i32) -> i32 {
     a + b
 }
 
+/// Extrae los paths de PDFs validos desde una lista de argumentos de CLI.
+/// Tipicamente recibimos argv = ["air-pdf.exe", "C:\\ruta\\al.pdf"] desde
+/// "Abrir con" de Windows, asociaciones de archivo, o drag-and-drop al exe.
+fn extract_pdf_paths_from_args(args: &[String]) -> Vec<String> {
+    args.iter()
+        .skip(1) // primer argumento es el .exe
+        .filter(|a| {
+            let lower = a.to_lowercase();
+            lower.ends_with(".pdf") && std::path::Path::new(a).is_file()
+        })
+        .cloned()
+        .collect()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Initialize PDFium at startup. If this fails, the app still runs but
@@ -23,17 +37,53 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        // Single instance: si el usuario hace doble-click en otro PDF mientras
+        // la app ya esta abierta, NO se lanza una segunda ventana. En su lugar,
+        // el callback recibe los args del segundo lanzamiento y los reenvia a
+        // la primera instancia via evento `open-pdf-from-cli`.
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            let pdfs = extract_pdf_paths_from_args(&args);
+            if !pdfs.is_empty() {
+                use tauri::{Emitter, Manager};
+                let _ = app.emit("open-pdf-from-cli", pdfs);
+                // Traer la ventana al frente
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                    let _ = window.unminimize();
+                }
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .setup(|app| {
+            // Cuando la app arranca por doble-click en un PDF, Windows pasa
+            // el path como argumento. Lo emitimos al frontend para que abra
+            // la pestana automaticamente. Damos un pequeno delay porque el
+            // frontend puede no estar listo todavia para escuchar.
+            let args: Vec<String> = std::env::args().collect();
+            let pdfs = extract_pdf_paths_from_args(&args);
+            if !pdfs.is_empty() {
+                use tauri::Emitter;
+                let handle = app.handle().clone();
+                std::thread::spawn(move || {
+                    // Esperar 500ms para que el frontend monte sus listeners
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    let _ = handle.emit("open-pdf-from-cli", pdfs);
+                });
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             greet,
             commands::pdf::pdf_open,
             commands::pdf::pdf_render_page,
             commands::pdf::pdf_extract_text,
             commands::pdf::pdf_detect_dominant_font,
+            commands::pdf::pdf_list_fonts_in_page,
             commands::pdf::pdf_get_bookmarks,
             commands::pdf::pdf_get_pages_info,
             commands::pdf::pdf_save_backup,

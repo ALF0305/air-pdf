@@ -32,6 +32,7 @@ import { SanitizeDialog } from "@/components/dialogs/SanitizeDialog";
 import { AutoRedactDialog } from "@/components/dialogs/AutoRedactDialog";
 import { BlankPagesDialog } from "@/components/dialogs/BlankPagesDialog";
 import { PrintDialog } from "@/components/dialogs/PrintDialog";
+import { FontInspectorDialog } from "@/components/dialogs/FontInspectorDialog";
 import { MenuBar } from "@/components/menu/MenuBar";
 import { StatusBar } from "@/components/statusbar/StatusBar";
 import { TabBar } from "@/components/tabs/TabBar";
@@ -49,6 +50,7 @@ import { useAutoSave } from "@/hooks/useAutoSave";
 import { useUpdateCheck } from "@/hooks/useUpdateCheck";
 import { FolderOpen, Search, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
 
 function App() {
   const addTab = usePdfStore((s) => s.addTab);
@@ -216,6 +218,27 @@ function App() {
     }
   });
 
+  // Recibir PDFs desde CLI / file association: cuando Windows lanza
+  // air-pdf.exe "C:\ruta\a.pdf" (doble-click en explorador, "Abrir con",
+  // o segunda instancia detectada por single-instance), el backend emite
+  // este evento con la lista de paths.
+  useEffect(() => {
+    const unlistenPromise = listen<string[]>("open-pdf-from-cli", async (event) => {
+      const paths = event.payload;
+      for (const path of paths) {
+        try {
+          const doc = await openPdfFlow(path);
+          if (doc) addTab(doc);
+        } catch (e) {
+          console.error("Cannot open file from CLI", path, e);
+        }
+      }
+    });
+    return () => {
+      unlistenPromise.then((unlisten) => unlisten());
+    };
+  }, [addTab]);
+
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground">
       {!readingMode && (
@@ -309,6 +332,7 @@ function ToolDialogMount() {
   if (dialog === "autoRedact") return <AutoRedactDialog open={true} onClose={close} />;
   if (dialog === "blankPages") return <BlankPagesDialog open={true} onClose={close} />;
   if (dialog === "print") return <PrintDialog open={true} onClose={close} />;
+  if (dialog === "fontInspector") return <FontInspectorDialog open={true} onClose={close} />;
   return null;
 }
 

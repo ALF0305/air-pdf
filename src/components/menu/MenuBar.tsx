@@ -339,6 +339,12 @@ export function MenuBar({ onOpen, onSearch }: Props) {
           >
             Detectar y eliminar páginas en blanco...
           </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setToolDialog("fontInspector")}
+            disabled={!activeTabId}
+          >
+            Ver fuentes del documento...
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => handleRotateAll(90)}

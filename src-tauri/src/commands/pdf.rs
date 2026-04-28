@@ -42,6 +42,17 @@ pub async fn pdf_detect_dominant_font(
     extractor::detect_dominant_font(&path, page_index).map_err(|e| e.to_string())
 }
 
+/// Lista TODAS las fuentes presentes en una pagina con frecuencia, util
+/// para inspector visual del PDF.
+#[tauri::command]
+pub async fn pdf_list_fonts_in_page(
+    path: String,
+    page_index: u16,
+) -> Result<Vec<extractor::FontUsage>, String> {
+    let path = PathBuf::from(&path);
+    extractor::list_fonts_in_page(&path, page_index).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub async fn pdf_get_bookmarks(
     path: String,
