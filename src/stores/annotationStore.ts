@@ -27,7 +27,7 @@ interface AnnotationStore {
   load: (pdfPath: string) => Promise<void>;
   add: (
     partial: Omit<Annotation, "id" | "createdAt" | "updatedAt">
-  ) => Promise<void>;
+  ) => Promise<string | null>;
   update: (a: Annotation) => Promise<void>;
   remove: (id: string) => Promise<void>;
   clear: () => Promise<void>;
@@ -57,7 +57,7 @@ export const useAnnotationStore = create<AnnotationStore>((set, get) => ({
 
   add: async (partial) => {
     const path = get().pdfPath;
-    if (!path) return;
+    if (!path) return null;
     const now = new Date().toISOString();
     const annotation: Annotation = {
       ...partial,
@@ -68,8 +68,10 @@ export const useAnnotationStore = create<AnnotationStore>((set, get) => ({
     try {
       const sidecar = await api.addAnnotation(path, annotation);
       set({ annotations: sidecar.annotations });
+      return annotation.id;
     } catch (e) {
       console.error("add annotation failed", e);
+      return null;
     }
   },
 

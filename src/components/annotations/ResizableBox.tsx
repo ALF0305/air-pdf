@@ -23,6 +23,8 @@ interface Props {
   onDelete?: () => void;
   /** Preserve aspect ratio on corner-resize (e.g., images). */
   lockAspect?: boolean;
+  /** Optional toolbar shown above the box when selected (e.g., "Incrustar"). */
+  actions?: React.ReactNode;
 }
 
 type Handle = "move" | "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
@@ -41,6 +43,7 @@ export function ResizableBox({
   onSelect,
   onDelete,
   lockAspect = false,
+  actions,
 }: Props) {
   const startRef = useRef<{
     mouseX: number;
@@ -213,6 +216,28 @@ export function ResizableBox({
       }}
     >
       {children}
+      {selected && actions && (
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: -34,
+            display: "flex",
+            gap: 4,
+            background: "white",
+            border: "1px solid #2196F3",
+            borderRadius: 4,
+            padding: "2px 4px",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+            zIndex: 10,
+            whiteSpace: "nowrap",
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {actions}
+        </div>
+      )}
       {selected && (
         <>
           <div

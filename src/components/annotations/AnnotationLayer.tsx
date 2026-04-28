@@ -10,6 +10,12 @@ interface Props {
   width: number;
   height: number;
   scale: number;
+  /**
+   * Si se provee, las imagenes anotadas muestran un boton "Incrustar en PDF"
+   * cuando estan seleccionadas. El callback recibe la anotacion para que el
+   * padre invoque el backend (stampImage) con sus coordenadas.
+   */
+  onEmbedImage?: (annotation: Annotation) => void;
 }
 
 function renderAnnotation(
@@ -242,7 +248,7 @@ function renderAnnotation(
   }
 }
 
-export function AnnotationLayer({ pageIndex, width, height, scale }: Props) {
+export function AnnotationLayer({ pageIndex, width, height, scale, onEmbedImage }: Props) {
   const annotations = useAnnotationStore((s) => s.annotations);
   const selectedId = useAnnotationStore((s) => s.selectedId);
   const select = useAnnotationStore((s) => s.selectAnnotation);
@@ -325,6 +331,24 @@ export function AnnotationLayer({ pageIndex, width, height, scale }: Props) {
     if (a.type === "image") {
       const d = a.data as { imagePath?: string } | undefined;
       const src = d?.imagePath ? convertFileSrc(d.imagePath) : "";
+      const actions = isSel && onEmbedImage ? (
+        <button
+          type="button"
+          onClick={() => onEmbedImage(a)}
+          style={{
+            fontSize: 12,
+            padding: "2px 8px",
+            background: "#2196F3",
+            color: "white",
+            border: "none",
+            borderRadius: 3,
+            cursor: "pointer",
+          }}
+          title="Incrustar la imagen como objeto del PDF (queda como parte del documento, no como anotacion)"
+        >
+          Incrustar en PDF
+        </button>
+      ) : null;
       return (
         <ResizableBox
           key={a.id}
@@ -340,6 +364,7 @@ export function AnnotationLayer({ pageIndex, width, height, scale }: Props) {
           minWidth={20}
           minHeight={20}
           lockAspect
+          actions={actions}
         >
           <img
             src={src}

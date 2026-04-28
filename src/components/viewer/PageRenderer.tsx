@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { renderPage } from "@/lib/tauri";
+import { renderPage, stampImage, savePdfBackup, saveVersion } from "@/lib/tauri";
 import { AnnotationLayer } from "@/components/annotations/AnnotationLayer";
 import { StampPicker, type Stamp } from "@/components/annotations/StampPicker";
 import { FreeTextEditor } from "@/components/annotations/FreeTextEditor";
@@ -9,6 +9,7 @@ import { usePdfStore } from "@/stores/pdfStore";
 import { useUiStore } from "@/stores/uiStore";
 import type { FreetextData } from "@/types/annotations";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import type { Annotation } from "@/types/annotations";
 
 interface Props {
   path: string;
@@ -48,7 +49,11 @@ export function PageRenderer({
   } | null>(null);
   const tool = useAnnotationStore((s) => s.activeTool);
   const add = useAnnotationStore((s) => s.add);
+  const setTool = useAnnotationStore((s) => s.setTool);
+  const selectAnnotation = useAnnotationStore((s) => s.selectAnnotation);
+  const removeAnnotation = useAnnotationStore((s) => s.remove);
   const refreshKey = useUiStore((s) => s.refreshKey);
+  const bumpRefresh = useUiStore((s) => s.bumpRefresh);
   const totalPages = usePdfStore((s) => s.getActiveTab()?.pageCount ?? 1);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -153,7 +158,7 @@ export function PageRenderer({
       const defaultH = defaultW * aspect;
       const pdfX = xPx / scale;
       const pdfY = yPx / scale;
-      await add({
+      const newId = await add({
         type: "image",
         page: pageIndex,
         rect: [pdfX, pdfY, pdfX + defaultW, pdfY + defaultH],
@@ -161,6 +166,12 @@ export function PageRenderer({
         author: "Alfredo",
         data: { imagePath: picked, nativeWidth: natW, nativeHeight: natH },
       });
+      // UX Word-like: tras pegar, cambia a select y selecciona la imagen
+      // para que aparezcan las manijas de mover/redimensionar sin pasos extra.
+      if (newId) {
+        setTool("select");
+        selectAnnotation(newId);
+      }
     }
   };
 
@@ -171,7 +182,7 @@ export function PageRenderer({
     const textWidth = Math.max(60, text.length * format.size * 0.55);
     const lines = text.split("\n").length;
     const textHeight = lines * format.size * 1.3;
-    await add({
+    const newId = await add({
       type: "freetext",
       page: pageIndex,
       rect: [pdfX, pdfY, pdfX + textWidth, pdfY + textHeight],
@@ -181,11 +192,16 @@ export function PageRenderer({
       data: format,
     });
     setFreeTextEditor(null);
+    // UX Word-like: queda seleccionado para mover/redimensionar.
+    if (newId) {
+      setTool("select");
+      selectAnnotation(newId);
+    }
   };
 
   const handleStampPick = async (stamp: Stamp) => {
     if (!pendingStampPos) return;
-    await add({
+    const newId = await add({
       type: "stamp",
       page: pageIndex,
       rect: [
@@ -201,6 +217,10 @@ export function PageRenderer({
       data: { stampId: stamp.id, fgColor: stamp.color },
     });
     setPendingStampPos(null);
+    if (newId) {
+      setTool("select");
+      selectAnnotation(newId);
+    }
   };
 
   return (
@@ -243,6 +263,37 @@ export function PageRenderer({
         width={width}
         height={height}
         scale={scale}
+        onEmbedImage={async (annotation: Annotation) => {
+          const d = annotation.data as { imagePath?: string } | undefined;
+          if (!d?.imagePath) {
+            alert("La imagen no tiene ruta asociada.");
+            return;
+          }
+          if (
+            !confirm(
+              "Vas a incrustar la imagen como objeto del PDF (parte del documento, no como anotacion). " +
+                "Se crea un backup .bak antes. Continuar?"
+            )
+          ) {
+            return;
+          }
+          // Coordenadas: rect en PDF points con origen top-left.
+          // stampImage usa origen bottom-left, asi que convertimos.
+          const [x1, y1, x2, y2] = annotation.rect;
+          const left = x1;
+          const w = x2 - x1;
+          const h = y2 - y1;
+          const bottom = height - y2;
+          try {
+            await saveVersion(path);
+            await savePdfBackup(path, path + ".bak");
+            await stampImage(path, path, pageIndex, d.imagePath, left, bottom, w, h);
+            await removeAnnotation(annotation.id);
+            bumpRefresh();
+          } catch (e) {
+            alert(`Error al incrustar la imagen: ${e}`);
+          }
+        }}
       />
       <PageOverlay
         pageIndex={pageIndex}
