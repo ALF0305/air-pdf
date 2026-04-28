@@ -31,6 +31,17 @@ pub async fn pdf_extract_text(path: String, page_index: u16) -> Result<String, S
     extractor::extract_page_text(&path, page_index).map_err(|e| e.to_string())
 }
 
+/// Detecta la fuente y tamano dominantes en una pagina del PDF.
+/// Devuelve None si la pagina no tiene texto (e.g., escaneo sin OCR).
+#[tauri::command]
+pub async fn pdf_detect_dominant_font(
+    path: String,
+    page_index: u16,
+) -> Result<Option<extractor::DominantFont>, String> {
+    let path = PathBuf::from(&path);
+    extractor::detect_dominant_font(&path, page_index).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub async fn pdf_get_bookmarks(
     path: String,

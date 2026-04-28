@@ -44,6 +44,129 @@ pub fn extract_all_text(path: &Path) -> Result<Vec<String>> {
     Ok(texts)
 }
 
+// ====================== DOMINANT FONT DETECTION ======================
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DominantFont {
+    /// Familia mapeada a una fuente del sistema disponible en el editor.
+    pub font: String,
+    /// Tamano en puntos PDF (redondeado al entero mas comun).
+    pub size: f32,
+    pub bold: bool,
+    pub italic: bool,
+}
+
+/// Detecta la fuente y tamano dominantes en una pagina del PDF.
+/// Devuelve None si la pagina no tiene texto.
+pub fn detect_dominant_font(path: &Path, page_index: u16) -> Result<Option<DominantFont>> {
+    let pdfium = pdfium()?;
+    let document = pdfium
+        .load_pdf_from_file(path, None)
+        .map_err(|e| AppError::Pdf(e.to_string()))?;
+
+    let pages = document.pages();
+    if (page_index as i32) >= pages.len() {
+        return Ok(None);
+    }
+
+    let page = pages
+        .get(page_index as i32)
+        .map_err(|e| AppError::Pdf(e.to_string()))?;
+    let text_page = match page.text() {
+        Ok(t) => t,
+        Err(_) => return Ok(None),
+    };
+
+    use std::collections::HashMap;
+    let mut counts: HashMap<(String, u32, bool, bool), usize> = HashMap::new();
+
+    for ch in text_page.chars().iter() {
+        if ch.unicode_char().map(|c| c.is_whitespace()).unwrap_or(true) {
+            continue;
+        }
+        let raw_name = ch.font_name();
+        if raw_name.is_empty() {
+            continue;
+        }
+        let (family, bold, italic) = normalize_font_name(&raw_name);
+        let size = ch.unscaled_font_size().value;
+        if size <= 0.0 {
+            continue;
+        }
+        let key = (family, size.round() as u32, bold, italic);
+        *counts.entry(key).or_insert(0) += 1;
+    }
+
+    if counts.is_empty() {
+        return Ok(None);
+    }
+
+    let ((family, size, bold, italic), _count) = counts
+        .into_iter()
+        .max_by_key(|(_, c)| *c)
+        .expect("counts no esta vacio");
+
+    Ok(Some(DominantFont {
+        font: family,
+        size: size as f32,
+        bold,
+        italic,
+    }))
+}
+
+/// Mapea un nombre de fuente PDF (con prefijo subset y sufijos de
+/// variante) a una familia conocida + flags bold/italic.
+fn normalize_font_name(raw: &str) -> (String, bool, bool) {
+    let after_subset = match raw.find('+') {
+        Some(i) => &raw[i + 1..],
+        None => raw,
+    };
+
+    let lower = after_subset.to_lowercase();
+    let bold = lower.contains("bold") || lower.contains("-bd") || lower.contains("heavy");
+    let italic = lower.contains("italic") || lower.contains("oblique") || lower.contains("-it");
+
+    let family = if lower.contains("times") {
+        "Times New Roman"
+    } else if lower.contains("courier") || lower.contains("mono") {
+        "Courier New"
+    } else if lower.contains("calibri") {
+        "Calibri"
+    } else if lower.contains("cambria") {
+        "Cambria"
+    } else if lower.contains("candara") {
+        "Candara"
+    } else if lower.contains("comic") {
+        "Comic Sans MS"
+    } else if lower.contains("consolas") {
+        "Consolas"
+    } else if lower.contains("constantia") {
+        "Constantia"
+    } else if lower.contains("corbel") {
+        "Corbel"
+    } else if lower.contains("georgia") {
+        "Georgia"
+    } else if lower.contains("impact") {
+        "Impact"
+    } else if lower.contains("lucida") {
+        "Lucida Sans Unicode"
+    } else if lower.contains("palatino") {
+        "Palatino Linotype"
+    } else if lower.contains("segoe") {
+        "Segoe UI"
+    } else if lower.contains("tahoma") {
+        "Tahoma"
+    } else if lower.contains("trebuchet") {
+        "Trebuchet MS"
+    } else if lower.contains("verdana") {
+        "Verdana"
+    } else {
+        "Arial"
+    };
+
+    (family.to_string(), bold, italic)
+}
+
 // ====================== BOOKMARKS ======================
 
 #[derive(Debug, Clone, Serialize)]

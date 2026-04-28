@@ -33,6 +33,7 @@ pub fn run() {
             commands::pdf::pdf_open,
             commands::pdf::pdf_render_page,
             commands::pdf::pdf_extract_text,
+            commands::pdf::pdf_detect_dominant_font,
             commands::pdf::pdf_get_bookmarks,
             commands::pdf::pdf_get_pages_info,
             commands::pdf::pdf_save_backup,

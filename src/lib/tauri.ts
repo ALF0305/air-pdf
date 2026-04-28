@@ -65,6 +65,27 @@ export async function renderPage(
   return new Blob([new Uint8Array(bytes)], { type: "image/png" });
 }
 
+export interface DominantFont {
+  font: string;
+  size: number;
+  bold: boolean;
+  italic: boolean;
+}
+
+/**
+ * Detecta la fuente y tamano dominantes en una pagina del PDF.
+ * Devuelve null si la pagina no tiene texto (escaneo sin OCR, por ejemplo).
+ */
+export async function detectDominantFont(
+  path: string,
+  pageIndex: number
+): Promise<DominantFont | null> {
+  return await invoke<DominantFont | null>("pdf_detect_dominant_font", {
+    path,
+    pageIndex,
+  });
+}
+
 export async function extractPageText(
   path: string,
   pageIndex: number

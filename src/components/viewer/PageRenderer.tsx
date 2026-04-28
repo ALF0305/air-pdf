@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { renderPage, stampImage, savePdfBackup, saveVersion } from "@/lib/tauri";
+import {
+  renderPage,
+  stampImage,
+  savePdfBackup,
+  saveVersion,
+  detectDominantFont,
+} from "@/lib/tauri";
 import { AnnotationLayer } from "@/components/annotations/AnnotationLayer";
 import { StampPicker, type Stamp } from "@/components/annotations/StampPicker";
 import { FreeTextEditor } from "@/components/annotations/FreeTextEditor";
@@ -46,6 +52,7 @@ export function PageRenderer({
     topPx: number;
     pdfX: number;
     pdfY: number;
+    initialFormat?: Partial<FreetextData>;
   } | null>(null);
   const tool = useAnnotationStore((s) => s.activeTool);
   const add = useAnnotationStore((s) => s.add);
@@ -118,11 +125,29 @@ export function PageRenderer({
     }
 
     if (tool === "freetext") {
+      // Detectar fuente y tamano dominantes de la pagina para usarlos
+      // como default del editor. Si falla o no hay texto, FreeTextEditor
+      // cae a su fallback (Arial 14).
+      let initialFormat: Partial<FreetextData> | undefined;
+      try {
+        const dom = await detectDominantFont(path, pageIndex);
+        if (dom) {
+          initialFormat = {
+            font: dom.font,
+            size: dom.size,
+            bold: dom.bold,
+            italic: dom.italic,
+          };
+        }
+      } catch {
+        // ignorar; usamos defaults
+      }
       setFreeTextEditor({
         leftPx: xPx,
         topPx: yPx,
         pdfX: xPx / scale,
         pdfY: yPx / scale,
+        initialFormat,
       });
       return;
     }
@@ -308,6 +333,7 @@ export function PageRenderer({
       {freeTextEditor && (
         <FreeTextEditor
           positionPx={{ left: freeTextEditor.leftPx, top: freeTextEditor.topPx }}
+          initialFormat={freeTextEditor.initialFormat}
           onCommit={handleFreeTextCommit}
           onCancel={() => setFreeTextEditor(null)}
         />
