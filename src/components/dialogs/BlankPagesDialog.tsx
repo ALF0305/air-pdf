@@ -130,6 +130,18 @@ export function BlankPagesDialog({ open, onClose }: Props) {
           </div>
         </div>
 
+        {busy && !scan && !applied && (
+          <div className="mt-3 rounded border p-3 bg-blue-50 dark:bg-blue-950/30 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-3 w-3 rounded-full bg-blue-500 animate-pulse" />
+              <span>
+                Analizando páginas... esto puede tardar varios segundos en
+                PDFs de 30+ páginas (cada página se inspecciona en busca de
+                texto e imágenes).
+              </span>
+            </div>
+          </div>
+        )}
         {scan && !applied && (
           <div className="mt-3 rounded border p-3 bg-muted/30 text-sm">
             <div className="font-medium mb-1">
@@ -168,7 +180,7 @@ export function BlankPagesDialog({ open, onClose }: Props) {
           {!applied && (
             <>
               <Button variant="outline" onClick={handleDetect} disabled={busy}>
-                {busy ? "..." : "Detectar"}
+                {busy && !scan ? "Analizando..." : "Detectar"}
               </Button>
               <Button
                 onClick={handleDelete}
