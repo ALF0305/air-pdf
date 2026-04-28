@@ -100,17 +100,49 @@ arreglar en batch en una proxima sesion.
 - **Recomendacion**: boton de impresora en la toolbar principal cerca
   de Abrir/Guardar.
 
+### #7 - Imprimir solo guarda como PDF, no muestra impresoras reales
+
+- **Severidad**: bloqueante (funcion no cumple expectativa)
+- **Sintoma**: al dar "Imprimir...", la app pasa el archivo al visor
+  predeterminado de Windows que ofrece "Microsoft Print to PDF" o
+  "Guardar como PDF", pero NO muestra el dialogo de impresoras reales
+  (HP, Canon, Brother, etc. conectadas).
+- **Causa raiz**: el comando backend usa
+  `Start-Process -Verb Print` que abre el visor predeterminado y le
+  pasa el verbo Print. Si el visor predeterminado es Edge o un PDF
+  reader que esta configurado para imprimir a Microsoft Print to PDF
+  por defecto, eso es lo que aparece.
+- **Esperado**: dialog de impresion estandar de Windows con todas las
+  impresoras conectadas (locales y de red), opcion para elegir paginas,
+  copias, orientacion, calidad.
+- **Fix sugerido (orden de simplicidad)**:
+  - **A** (mas robusto): renderizar el PDF en un iframe del WebView
+    via PDF.js y llamar `iframe.contentWindow.print()`. Chromium
+    muestra su dialog nativo con todas las impresoras del sistema.
+    Requiere cargar el PDF en un canvas y llamar a print desde JS.
+  - **B** (intermedio): usar PDFium-render directamente para enviar
+    cada pagina al GDI de Windows + invocar la API `PrintDlgW` para
+    mostrar el dialog. Codigo Rust mas largo pero sin dependencia del
+    visor predeterminado.
+  - **C** (workaround minimo): cambiar `Start-Process -Verb Print` a
+    `Start-Process -Verb PrintTo "PrinterName"` despues de mostrar un
+    dropdown de impresoras del sistema en la UI. Al usuario le toca
+    elegir antes en lugar de despues.
+- **Recomendacion**: A. Es lo que esperan los usuarios y reusa el
+  motor de impresion del WebView que Tauri ya tiene cargado.
+
 ## Plan sugerido para sesion de fix
 
 Orden por valor / esfuerzo:
 
 1. **#2 + #3** (imagenes Word-like): cambia mucho el feeling, ~30 min
 2. **#4** (grosor de trazo): falta evidente, ~30 min
-3. **#1** (fuente FreeText): codigo backend ya casi listo, ~30 min
-4. **#6** (imprimir prominente): trivial, ~10 min
-5. **#5** (performance blank pages): si A no es complicado, ir; sino C, ~30-60 min
+3. **#7** (imprimir a impresora real): bloqueante, ~45 min (ruta A)
+4. **#1** (fuente FreeText): codigo backend ya casi listo, ~30 min
+5. **#6** (imprimir prominente): trivial, ~10 min
+6. **#5** (performance blank pages): si A no es complicado, ir; sino C, ~30-60 min
 
-Total estimado: 2-3 horas en una sesion.
+Total estimado: 3-4 horas en una sesion.
 
 ## Origen
 
