@@ -131,18 +131,73 @@ arreglar en batch en una proxima sesion.
 - **Recomendacion**: A. Es lo que esperan los usuarios y reusa el
   motor de impresion del WebView que Tauri ya tiene cargado.
 
+### #8 - FreeText: Escape no guarda y el usuario no sabe como guardar
+
+- **Severidad**: bloqueante (la feature parece rota desde la perspectiva del usuario)
+- **Sintoma**: el usuario escribe texto en el FreeTextEditor y presiona Escape
+  pensando que guardara. Escape cancela y pierde lo escrito. El usuario no
+  encuentra como guardar.
+- **Causa raiz**: convencion confusa
+  - Enter (sin shift) = commit
+  - Escape = cancel
+  - Shift+Enter = nueva linea
+  El usuario natural espera Escape o click fuera = guardar (como Word).
+- **Esperado**: comportamiento Word-like
+  - Click fuera del editor = guardar (no cancelar)
+  - Escape = cancelar (con confirmacion si hay texto)
+  - Enter = nueva linea (no guardar)
+  - Boton "Guardar" claro
+  - O al menos: tooltip explicito "Enter para guardar, Escape cancela"
+- **Fix sugerido**:
+  - Cambiar onBlur de FreeTextEditor para que commit en vez de cancel cuando
+    hay texto.
+  - Anadir tooltip arriba del editor: "Enter = guardar, Shift+Enter = nueva linea, Esc = cancelar"
+  - Hacer mas visible el icono de check verde (mas grande, mejor color).
+
+### #9 - FreeText: la fuente detectada no coincide con la del documento
+
+- **Severidad**: UX (el fix #1 esta funcionando parcialmente)
+- **Sintoma**: tras instalar v0.3.1 con los fixes, el editor abre con fuente
+  pero NO es la del documento original. El usuario no tiene forma de
+  verificar cual es la fuente real del PDF para comparar.
+- **Causas posibles**:
+  - El mapeo de `normalize_font_name` esta mapeando mal (ej. "TimesNewRomanPS-MT"
+    podria caer en Arial si la heuristica falla)
+  - El PDF usa una fuente subset que PDFium reporta como nombre raro
+  - Hay multiples fuentes y la dominante no es la del parrafo del click
+- **Necesidad complementaria**: herramienta para inspeccionar fuentes del PDF
+  - Boton "Ver fuentes del documento" que liste por pagina las fuentes y
+    tamanos detectados con su frecuencia
+  - Asi el usuario puede verificar que `pdf_detect_dominant_font` reporta
+    lo esperado vs lo que el ve en el PDF
+- **Fix sugerido**:
+  - Mejorar `normalize_font_name` para mas casos (debug con PDFs reales del
+    usuario)
+  - Anadir comando `pdf_list_fonts(path, page)` que devuelve `[{font, size, count}]`
+    de la pagina. UI con dropdown "Fuentes detectadas en pagina actual" que
+    el usuario puede ver
+  - Considerar detectar la fuente del parrafo MAS CERCANO al click en vez de
+    la dominante de toda la pagina (mas preciso)
+
 ## Plan sugerido para sesion de fix
 
 Orden por valor / esfuerzo:
 
-1. **#2 + #3** (imagenes Word-like): cambia mucho el feeling, ~30 min
-2. **#4** (grosor de trazo): falta evidente, ~30 min
-3. **#7** (imprimir a impresora real): bloqueante, ~45 min (ruta A)
-4. **#1** (fuente FreeText): codigo backend ya casi listo, ~30 min
-5. **#6** (imprimir prominente): trivial, ~10 min
-6. **#5** (performance blank pages): si A no es complicado, ir; sino C, ~30-60 min
+### Issues #1-#7 (RESUELTOS en sesion 2026-04-28):
 
-Total estimado: 3-4 horas en una sesion.
+1. **#2 + #3** imagenes Word-like + boton Incrustar — commit `08ad094`
+2. **#4** grosor de trazo — commit `bbd5e22`
+3. **#6** boton Imprimir en toolbar — commit `2081d1a`
+4. **#5** loader blank pages — commit `37341a3`
+5. **#1** fuente FreeText (parcialmente, ver #9) — commit `7aef507`
+6. **#7** dialog impresoras (ruta C) — commit `22d461d`
+
+### Issues #8-#9 (NUEVOS en testing 2026-04-28 noche):
+
+7. **#8** FreeText: Escape no guarda, UX confuso — pendiente
+8. **#9** Fuente detectada no coincide con documento + falta inspector — pendiente
+
+Estimacion proxima sesion: 1-2 horas para #8 + #9.
 
 ## Origen
 
