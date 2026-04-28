@@ -40,6 +40,8 @@ export interface Annotation {
   createdAt: string;
   updatedAt: string;
   data?: unknown;
+  /** Grosor del trazo en px para rect/circle/arrow. Default 2. */
+  strokeWidth?: number;
 }
 
 export interface AnnotationsSidecar {

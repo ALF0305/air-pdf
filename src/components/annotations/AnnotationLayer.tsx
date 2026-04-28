@@ -85,26 +85,30 @@ function renderAnnotation(
           />
         </div>
       );
-    case "rect":
+    case "rect": {
+      const sw = a.strokeWidth ?? 2;
       return (
         <div
           key={a.id}
-          style={{ ...style, border: `2px solid ${a.color}` }}
+          style={{ ...style, border: `${sw}px solid ${a.color}` }}
           onClick={handleClick}
         />
       );
-    case "circle":
+    }
+    case "circle": {
+      const sw = a.strokeWidth ?? 2;
       return (
         <div
           key={a.id}
           style={{
             ...style,
-            border: `2px solid ${a.color}`,
+            border: `${sw}px solid ${a.color}`,
             borderRadius: "50%",
           }}
           onClick={handleClick}
         />
       );
+    }
     case "arrow": {
       const dx = (x2 - x1) * scale;
       const dy = (y2 - y1) * scale;
@@ -140,7 +144,7 @@ function renderAnnotation(
             x2={dx}
             y2={dy}
             stroke={a.color}
-            strokeWidth={2}
+            strokeWidth={a.strokeWidth ?? 2}
             markerEnd={`url(#arrow-${a.id})`}
             style={{ pointerEvents: canSelect ? "auto" : "none", cursor: canSelect ? "pointer" : "default" }}
             onClick={(e) => {

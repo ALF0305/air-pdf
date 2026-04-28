@@ -60,9 +60,14 @@ export function AnnotationToolbar() {
   const activeTool = useAnnotationStore((s) => s.activeTool);
   const activeColor = useAnnotationStore((s) => s.activeColor);
   const activeCategory = useAnnotationStore((s) => s.activeCategory);
+  const activeStrokeWidth = useAnnotationStore((s) => s.activeStrokeWidth);
   const setTool = useAnnotationStore((s) => s.setTool);
   const setColor = useAnnotationStore((s) => s.setColor);
   const setCategory = useAnnotationStore((s) => s.setCategory);
+  const setStrokeWidth = useAnnotationStore((s) => s.setStrokeWidth);
+
+  const showStrokeWidth =
+    activeTool === "rect" || activeTool === "circle" || activeTool === "arrow";
 
   return (
     <div className="flex items-center gap-2 border-b px-2 py-1 bg-muted/50">
@@ -108,6 +113,29 @@ export function AnnotationToolbar() {
           </option>
         ))}
       </select>
+      {showStrokeWidth && (
+        <>
+          <div className="w-px h-6 bg-border" />
+          <label className="text-xs text-muted-foreground" htmlFor="stroke-width">
+            Grosor:
+          </label>
+          <select
+            id="stroke-width"
+            value={activeStrokeWidth}
+            onChange={(e) => setStrokeWidth(Number(e.target.value))}
+            className="text-sm bg-background border rounded px-2 py-1"
+            title="Grosor del trazo en pixeles"
+          >
+            <option value={1}>1 px</option>
+            <option value={2}>2 px</option>
+            <option value={3}>3 px</option>
+            <option value={4}>4 px</option>
+            <option value={6}>6 px</option>
+            <option value={8}>8 px</option>
+            <option value={12}>12 px</option>
+          </select>
+        </>
+      )}
     </div>
   );
 }

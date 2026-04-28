@@ -14,6 +14,7 @@ export function usePageInteraction(pageIndex: number, scale: number) {
   const tool = useAnnotationStore((s) => s.activeTool);
   const color = useAnnotationStore((s) => s.activeColor);
   const category = useAnnotationStore((s) => s.activeCategory);
+  const strokeWidth = useAnnotationStore((s) => s.activeStrokeWidth);
   const add = useAnnotationStore((s) => s.add);
 
   const isDrawingTool =
@@ -101,6 +102,7 @@ export function usePageInteraction(pageIndex: number, scale: number) {
       tool === "circle" ||
       tool === "arrow"
     ) {
+      const usesStroke = tool === "rect" || tool === "circle" || tool === "arrow";
       await add({
         type: tool,
         page: pageIndex,
@@ -108,6 +110,7 @@ export function usePageInteraction(pageIndex: number, scale: number) {
         color,
         category,
         author: "Alfredo",
+        ...(usesStroke ? { strokeWidth } : {}),
       });
     } else if (tool === "note") {
       const noteText = prompt("Texto de la nota:");
@@ -124,7 +127,7 @@ export function usePageInteraction(pageIndex: number, scale: number) {
       }
     }
     setDrag(null);
-  }, [drag, penPath, isPen, tool, color, category, pageIndex, add]);
+  }, [drag, penPath, isPen, tool, color, category, strokeWidth, pageIndex, add]);
 
   return {
     onMouseDown,

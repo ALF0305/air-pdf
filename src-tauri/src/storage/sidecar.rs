@@ -24,6 +24,10 @@ pub struct Annotation {
     pub updated_at: String,
     #[serde(default)]
     pub data: serde_json::Value,
+    /// Grosor del trazo en pixeles para anotaciones tipo rect/circle/arrow.
+    /// None = usa default 2.
+    #[serde(default)]
+    pub stroke_width: Option<f32>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -135,6 +139,7 @@ mod tests {
             created_at: "2026-04-19".into(),
             updated_at: "2026-04-19".into(),
             data: serde_json::Value::Null,
+            stroke_width: None,
         });
         save(&temp, &mut sidecar).unwrap();
         let reloaded = load(&temp).unwrap();

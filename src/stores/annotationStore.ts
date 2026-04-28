@@ -22,6 +22,8 @@ interface AnnotationStore {
   activeTool: Tool;
   activeColor: string;
   activeCategory: string;
+  /** Grosor del trazo en px para nuevas anotaciones rect/circle/arrow. */
+  activeStrokeWidth: number;
   selectedId: string | null;
 
   load: (pdfPath: string) => Promise<void>;
@@ -34,6 +36,7 @@ interface AnnotationStore {
   setTool: (t: Tool) => void;
   setColor: (c: string) => void;
   setCategory: (c: string) => void;
+  setStrokeWidth: (w: number) => void;
   selectAnnotation: (id: string | null) => void;
 }
 
@@ -43,6 +46,7 @@ export const useAnnotationStore = create<AnnotationStore>((set, get) => ({
   activeTool: "select",
   activeColor: "#FFEB3B",
   activeCategory: "Importante",
+  activeStrokeWidth: 2,
   selectedId: null,
 
   load: async (pdfPath) => {
@@ -112,5 +116,6 @@ export const useAnnotationStore = create<AnnotationStore>((set, get) => ({
   setTool: (activeTool) => set({ activeTool }),
   setColor: (activeColor) => set({ activeColor }),
   setCategory: (activeCategory) => set({ activeCategory }),
+  setStrokeWidth: (activeStrokeWidth) => set({ activeStrokeWidth }),
   selectAnnotation: (selectedId) => set({ selectedId }),
 }));
