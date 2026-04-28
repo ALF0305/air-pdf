@@ -250,6 +250,20 @@ Bump version 0.3.1 -> 0.3.2.
   spool queda colgado sin feedback. Pendiente: capturar exit code del
   verbo PrintTo y consultar Get-PrintJob.
 
+- **#19** Busqueda Ctrl+F: encuentra palabras (lista resultados) pero
+  al hacer click en un resultado NO salta a la pagina/posicion de la
+  palabra. Solo deja el archivo igual. Esperado: click en resultado
+  -> navegar a esa pagina y resaltar la palabra. Posible solucion:
+  el resultado ya tiene `page` y `rect`; el handler de click debe
+  llamar `setCurrentPage(result.page)` y hacer scroll al rect.
+
+- **#20** Sello (stamp): al colocar un sello no se puede mover ni
+  redimensionar (falta el flujo Word-like que ya tienen image y freetext).
+  Ademas falta UI para cambiar color, opacidad/intensidad. Solucion:
+  hacer que stamp use el mismo ResizableBox que image/freetext (ya
+  esta auto-select tras crear), agregar slider de opacidad y selector
+  de color en la barra contextual cuando esta seleccionado.
+
 ### Issues #11-#14 (NUEVOS reportados en testing 2026-04-29 manana, post-fix #8/#9/#10):
 
 10. **#11** Grosor de trazo "sigue igual" — investigar si el usuario probo
