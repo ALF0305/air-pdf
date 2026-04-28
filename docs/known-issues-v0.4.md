@@ -227,6 +227,29 @@ Orden por valor / esfuerzo:
 
 Bump version 0.3.1 -> 0.3.2.
 
+### Issues #15-#18 (NUEVOS testing v0.3.2, dos resueltos en v0.3.3):
+
+- **#15** FreeText abre con tamano "Arial 1" y no deja escribir. Causa
+  raiz: detect_dominant_font usaba unscaled_font_size que en PDFs con
+  transformaciones de scale devuelve 1 pt cuando el real es 12 pt.
+  **RESUELTO en v0.3.3**: cambiado a scaled_font_size + validacion
+  rango 6-200 pt en frontend.
+
+- **#16** AI "Preguntar a Claude" error "forbidden path:
+  C:\Users\...\file.pdf.ai.tmp.txt". Causa raiz: AiDialog creaba archivo
+  temporal en la misma carpeta del PDF y lo leia con plugin-fs, pero
+  Tauri 2 bloquea fs en carpetas no scopeadas (Downloads, Documents).
+  **RESUELTO en v0.3.3**: nuevo comando pdf_extract_all_text_concat
+  que devuelve el texto directo, sin archivo temporal.
+
+- **#17** Imprimir con "Microsoft Print to PDF" / Adobe no avisa al
+  usuario donde se guarda el archivo PDF. Pendiente: capturar el path
+  resultante o avisar antes de imprimir.
+
+- **#18** Impresora HP no informa cuando esta apagada / sin red. El
+  spool queda colgado sin feedback. Pendiente: capturar exit code del
+  verbo PrintTo y consultar Get-PrintJob.
+
 ### Issues #11-#14 (NUEVOS reportados en testing 2026-04-29 manana, post-fix #8/#9/#10):
 
 10. **#11** Grosor de trazo "sigue igual" — investigar si el usuario probo

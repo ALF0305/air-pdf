@@ -10,9 +10,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
-import { writeTextFile, readTextFile } from "@tauri-apps/plugin-fs";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { usePdfStore } from "@/stores/pdfStore";
-import { askClaude, extractTextToFile, readLocalApiKey } from "@/lib/tauri";
+import { askClaude, extractAllTextConcat, readLocalApiKey } from "@/lib/tauri";
 
 interface Props {
   open: boolean;
@@ -75,10 +75,9 @@ export function AiDialog({ open, onClose }: Props) {
     setBusy(true);
     setResponse("");
     try {
-      // Extract text to a temp file then read it
-      const tmp = `${tab.path}.ai.tmp.txt`;
-      await extractTextToFile(tab.path, tmp);
-      const text = await readTextFile(tmp);
+      // Extraer texto directo del backend (sin archivos temporales en disco
+      // que disparaban "forbidden path" del plugin-fs en Downloads/Documents).
+      const text = await extractAllTextConcat(tab.path);
       const truncated =
         text.length > 80000 ? text.slice(0, 80000) + "\n\n[…truncado]" : text;
       const answer = await askClaude(apiKey, prompt(truncated));

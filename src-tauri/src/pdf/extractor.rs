@@ -89,7 +89,13 @@ pub fn detect_dominant_font(path: &Path, page_index: u16) -> Result<Option<Domin
             continue;
         }
         let (family, bold, italic) = normalize_font_name(&raw_name);
-        let size = ch.unscaled_font_size().value;
+        // scaled_font_size aplica el vertical_scale del CTM, devolviendo el
+        // tamano visible real. unscaled puede dar 1pt cuando el real es 12pt
+        // (PDFs con transformaciones de scale). Si scaled da 0 o invalido,
+        // caemos al unscaled como fallback.
+        let scaled = ch.scaled_font_size().value;
+        let unscaled = ch.unscaled_font_size().value;
+        let size = if scaled > 1.5 { scaled } else { unscaled };
         if size <= 0.0 {
             continue;
         }
@@ -165,7 +171,13 @@ pub fn list_fonts_in_page(path: &Path, page_index: u16) -> Result<Vec<FontUsage>
             continue;
         }
         let (family, bold, italic) = normalize_font_name(&raw);
-        let size = ch.unscaled_font_size().value;
+        // scaled_font_size aplica el vertical_scale del CTM, devolviendo el
+        // tamano visible real. unscaled puede dar 1pt cuando el real es 12pt
+        // (PDFs con transformaciones de scale). Si scaled da 0 o invalido,
+        // caemos al unscaled como fallback.
+        let scaled = ch.scaled_font_size().value;
+        let unscaled = ch.unscaled_font_size().value;
+        let size = if scaled > 1.5 { scaled } else { unscaled };
         if size <= 0.0 {
             continue;
         }

@@ -31,6 +31,17 @@ pub async fn pdf_extract_text(path: String, page_index: u16) -> Result<String, S
     extractor::extract_page_text(&path, page_index).map_err(|e| e.to_string())
 }
 
+/// Extrae todo el texto del PDF en un solo String (paginas separadas por
+/// doble salto de linea). Usado por la integracion con Claude para evitar
+/// crear archivos temporales junto al PDF (que disparan "forbidden path"
+/// del plugin-fs cuando la carpeta no esta en los scopes).
+#[tauri::command]
+pub async fn pdf_extract_all_text_concat(path: String) -> Result<String, String> {
+    let path = PathBuf::from(&path);
+    let pages = extractor::extract_all_text(&path).map_err(|e| e.to_string())?;
+    Ok(pages.join("\n\n"))
+}
+
 /// Detecta la fuente y tamano dominantes en una pagina del PDF.
 /// Devuelve None si la pagina no tiene texto (e.g., escaneo sin OCR).
 #[tauri::command]

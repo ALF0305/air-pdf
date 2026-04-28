@@ -1,6 +1,6 @@
 [package]
 name = "air-pdf"
-version = "0.3.2"
+version = "0.3.3"
 description = "Editor de PDFs standalone con IA opcional"
 authors = ["Alfredo Pachas"]
 edition = "2021"

@@ -110,6 +110,15 @@ export async function listFontsInPage(
   });
 }
 
+/**
+ * Devuelve TODO el texto del PDF concatenado en un string (paginas
+ * separadas por \n\n). Sin archivos temporales en disco. Usado por la
+ * integracion con Claude.
+ */
+export async function extractAllTextConcat(path: string): Promise<string> {
+  return await invoke<string>("pdf_extract_all_text_concat", { path });
+}
+
 export async function extractPageText(
   path: string,
   pageIndex: number

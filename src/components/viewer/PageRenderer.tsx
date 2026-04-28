@@ -132,9 +132,13 @@ export function PageRenderer({
       try {
         const dom = await detectDominantFont(path, pageIndex);
         if (dom) {
+          // Defensa contra tamanos absurdos: PDFium puede devolver
+          // valores muy pequenos (1, 2 pt) cuando hay transformaciones
+          // raras. Si esta fuera de rango razonable, usamos default 14.
+          const safeSize = dom.size >= 6 && dom.size <= 200 ? dom.size : 14;
           initialFormat = {
             font: dom.font,
-            size: dom.size,
+            size: safeSize,
             bold: dom.bold,
             italic: dom.italic,
           };
