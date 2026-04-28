@@ -154,6 +154,33 @@ arreglar en batch en una proxima sesion.
   - Anadir tooltip arriba del editor: "Enter = guardar, Shift+Enter = nueva linea, Esc = cancelar"
   - Hacer mas visible el icono de check verde (mas grande, mejor color).
 
+### #10 - File association: doble-click en PDF abre AirPDF pero NO carga el archivo
+
+- **Severidad**: bloqueante (la asociacion declarada en tauri.conf no funciona end-to-end)
+- **Sintoma**: el usuario establece AirPDF como app predeterminada para
+  .pdf desde Windows. Doble-click en un PDF lanza AirPDF, pero la ventana
+  abre vacia (sin pestana, sin documento). El path del PDF que Windows pasa
+  como argumento se ignora.
+- **Causa raiz**: la app NO procesa argumentos de linea de comandos al
+  arranque. Cuando Windows ejecuta `air-pdf.exe "C:\ruta\a.pdf"`, el binario
+  no lee ese argumento. tauri.conf.json tiene declarada la file association
+  `.pdf` con rol Editor, pero falta el codigo que reciba el path.
+- **Esperado**: doble-click en .pdf abre AirPDF con ese PDF cargado
+  inmediatamente (como lo hace Adobe / Edge / Xodo).
+- **Fix sugerido**:
+  - Agregar plugin `tauri-plugin-single-instance` para evitar multiples
+    instancias (si la app ya esta abierta, abrir el PDF en pestana nueva
+    en vez de lanzar otra ventana).
+  - En `lib.rs run()`, leer `std::env::args()` al arranque. Si hay un
+    argumento que termine en `.pdf` y existe el archivo, emitir un evento
+    Tauri (`pdf-from-cli`) al frontend con el path.
+  - En frontend, hook `useEffect` en App.tsx escucha ese evento y llama
+    `openPdfFlow(path)` para cargar la pestana.
+  - Tambien manejar el caso single-instance: cuando llega un segundo
+    lanzamiento con un path, el callback del plugin recibe los args y los
+    propaga a la primera instancia via el mismo evento.
+- **Tiempo estimado**: 30-45 min.
+
 ### #9 - FreeText: la fuente detectada no coincide con la del documento
 
 - **Severidad**: UX (el fix #1 esta funcionando parcialmente)
@@ -192,12 +219,13 @@ Orden por valor / esfuerzo:
 5. **#1** fuente FreeText (parcialmente, ver #9) — commit `7aef507`
 6. **#7** dialog impresoras (ruta C) — commit `22d461d`
 
-### Issues #8-#9 (NUEVOS en testing 2026-04-28 noche):
+### Issues #8-#10 (NUEVOS en testing 2026-04-28 noche):
 
 7. **#8** FreeText: Escape no guarda, UX confuso — pendiente
 8. **#9** Fuente detectada no coincide con documento + falta inspector — pendiente
+9. **#10** File association: doble-click en PDF abre AirPDF pero no carga el archivo — pendiente
 
-Estimacion proxima sesion: 1-2 horas para #8 + #9.
+Estimacion proxima sesion: 2-3 horas para #8 + #9 + #10.
 
 ## Origen
 
